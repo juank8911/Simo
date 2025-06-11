@@ -98,48 +98,81 @@ const handleSpotAnalysisRequest = async (req, res) => {
 
             // Regla 3: Verificar precios si está en 2-4 exchanges
             if (numExchanges >= 2 && numExchanges <= 4) {
-                const pricePromises = coinData.exchanges.map(exId => 
-                    exchangeInstances[exId].fetchTicker(symbol).catch(e => {
-                        console.warn(`⚠️ No se pudo obtener precio de ${symbol} en ${exId}: ${e.message}`);
-                        return null; // Devolver null en caso de error
-                    })
+                const pricePromises = coinData.exchanges.map(exId =>
+                    exchangeInstances[exId].fetchTicker(symbol)
+                        .then(ticker => ({ ticker, exchangeId: exId })) // Incluir exchangeId
+                        .catch(e => {
+                            console.warn(`⚠️ No se pudo obtener precio de ${symbol} en ${exId}: ${e.message}`);
+                            return null;
+                        })
                 );
-                
-                const results = await Promise.allSettled(pricePromises);
-                const prices = results
-                    .filter(r => r.status === 'fulfilled' && r.value && r.value.ask)
-                    .map(r => r.value.ask);
 
-                if (prices.length < 2) {
+                const results = await Promise.allSettled(pricePromises);
+                const pricedExchanges = results
+                    .filter(r => r.status === 'fulfilled' && r.value && r.value.ticker && r.value.ticker.ask)
+                    .map(r => ({ price: r.value.ticker.ask, exchangeId: r.value.exchangeId }));
+
+                if (pricedExchanges.length < 2) {
                     continue; // No hay suficientes precios para comparar
                 }
 
-                let minPrice = Math.min(...prices);
-                let maxPrice = Math.max(...prices);
-                console.log("Min",minPrice, "max",maxPrice)
-                // Fórmula proporcionada: (valor1 - valor2) / ((valor1 * valor2) / 2)
-                let numerator = maxPrice - minPrice;
-                console.log(numerator)
-                let denominatorFormulaPart = (maxPrice + minPrice) / 2;
-                console.log(denominatorFormulaPart)
-                let difference;
+                let minPriceData = pricedExchanges[0];
+                let maxPriceData = pricedExchanges[0];
 
-                if (denominatorFormulaPart === 0) {
-                    // Si el denominador es 0:
-                    // - Si el numerador también es 0 (maxPrice === minPrice, y al menos uno es 0), la diferencia es 0.
-                    // - Si el numerador no es 0 (maxPrice > minPrice, y minPrice es 0), la diferencia es infinita.
-                    continue;
-                } else {
-                    difference = numerator / denominatorFormulaPart;
-                    console.log(difference);
-                    console.log(difference, " a", difference*100)
+                for (let i = 1; i < pricedExchanges.length; i++) {
+                    if (pricedExchanges[i].price < minPriceData.price) {
+                        minPriceData = pricedExchanges[i];
+                    }
+                    if (pricedExchanges[i].price > maxPriceData.price) {
+                        maxPriceData = pricedExchanges[i];
+                    }
                 }
 
+                const minPrice = minPriceData.price;
+                const maxPrice = maxPriceData.price;
+                const exchangeMin = minPriceData.exchangeId;
+                const exchangeMax = maxPriceData.exchangeId;
+
+                // Fórmula proporcionada: (valor1 - valor2) / ((valor1 * valor2) / 2)
+                let numerator = maxPrice - minPrice;
+                let difference;
+                let diferPercentageStr;
+
+                if (minPrice === 0 && maxPrice === 0) {
+                    difference = 0;
+                } else if (minPrice === 0 && maxPrice > 0) { // Denominador (maxPrice * minPrice / 2) sería 0
+                    difference = Infinity;
+                } else if (maxPrice > 0 && minPrice > 0) { // Ambos precios son positivos
+                    const denominatorProduct = maxPrice * minPrice;
+                    const denominatorFormulaPart = denominatorProduct / 2;
+                    if (denominatorFormulaPart === 0) { // Salvaguarda adicional
+                        console.warn(`Denominador cero inesperado para ${symbol} con minPrice ${minPrice}, maxPrice ${maxPrice}`);
+                        if (numerator === 0) difference = 0;
+                        else difference = Infinity; // O considerar saltar con 'continue'
+                    } else {
+                        difference = numerator / denominatorFormulaPart;
+                    }
+                } else {
+                    console.warn(`Saltando ${symbol} debido a precios inusuales para cálculo de diferencia: min ${minPrice}, max ${maxPrice}`);
+                    continue;
+                }
+
+                if (difference === Infinity) diferPercentageStr = "Infinity%";
+                else if (isNaN(difference)) diferPercentageStr = "NaN%";
+                else diferPercentageStr = (difference * 100).toFixed(2) + '%';
+
                 if (difference >= 0.006) {
-                    console.log(`✔ CONSERVADA: ${symbol} (Dif: ${(difference * 100).toFixed(2)}%)`);
+                    console.log(`✔ CONSERVADA: ${symbol} (Dif: ${diferPercentageStr})`);
+                    coinData.valores = {
+                        exValMin: exchangeMin,
+                        exValMax: exchangeMax,
+                        valMin: minPrice,
+                        valMax: maxPrice,
+                        difer: diferPercentageStr
+                    };
                     filteredCoinMap[symbol] = coinData;
                 } else {
-                    // console.log(`DESCARTADA: ${symbol} (Dif: ${(difference * 100).toFixed(2)}%)`);
+                    // console.log(`DESCARTADA: ${symbol} (Dif: ${diferPercentageStr})`);
                 }
             }
         }
