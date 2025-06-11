@@ -1,0 +1,7 @@
+[
+  {
+    "coinName": "BTC", 
+    "exchangeCount": 1,
+    "exchanges": ["binance"]
+  }
+]
