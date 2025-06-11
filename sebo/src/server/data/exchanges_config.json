@@ -9,7 +9,7 @@
   {
     "id": "bvox",
     "name": "BVOX",
-    "isActive": false,
+    "isActive": true,
     "isCoreExchange": true,
     "connectionType": null
   },
@@ -23,7 +23,7 @@
   {
     "id": "bynoxdex",
     "name": "Bynoxdex",
-    "isActive": false,
+    "isActive": true,
     "isCoreExchange": true,
     "connectionType": null
   },
@@ -383,5 +383,175 @@
     "isActive": true,
     "isCoreExchange": false,
     "connectionType": "ccxt"
+  },
+  {
+    "id": "zonda",
+    "name": "Zonda",
+    "isActive": false
+  },
+  {
+    "id": "zaif",
+    "name": "Zaif",
+    "isActive": false
+  },
+  {
+    "id": "yobit",
+    "name": "Yobit",
+    "isActive": false
+  },
+  {
+    "id": "woofipro",
+    "name": "Woofipro",
+    "isActive": false
+  },
+  {
+    "id": "woo",
+    "name": "Woo",
+    "isActive": true
+  },
+  {
+    "id": "wavesexchange",
+    "name": "Wavesexchange",
+    "isActive": true
+  },
+  {
+    "id": "vertex",
+    "name": "Vertex",
+    "isActive": false
+  },
+  {
+    "id": "tradeogre",
+    "name": "Tradeogre",
+    "isActive": false
+  },
+  {
+    "id": "timex",
+    "name": "Timex",
+    "isActive": true
+  },
+  {
+    "id": "blockchaincom",
+    "name": "Blockchaincom",
+    "isActive": true
+  },
+  {
+    "id": "blofin",
+    "name": "Blofin",
+    "isActive": true
+  },
+  {
+    "id": "btcalpha",
+    "name": "Btcalpha",
+    "isActive": true
+  },
+  {
+    "id": "btcbox",
+    "name": "Btcbox",
+    "isActive": true
+  },
+  {
+    "id": "bittrade",
+    "name": "Bittrade",
+    "isActive": true
+  },
+  {
+    "id": "bitvavo",
+    "name": "Bitvavo",
+    "isActive": true
+  },
+  {
+    "id": "bitteam",
+    "name": "Bitteam",
+    "isActive": true
+  },
+  {
+    "id": "bithumb",
+    "name": "Bithumb",
+    "isActive": true
+  },
+  {
+    "id": "bitmart",
+    "name": "Bitmart",
+    "isActive": true
+  },
+  {
+    "id": "bitopro",
+    "name": "Bitopro",
+    "isActive": true
+  },
+  {
+    "id": "bitso",
+    "name": "Bitso",
+    "isActive": true
+  },
+  {
+    "id": "coincatch",
+    "name": "Coincatch",
+    "isActive": true
+  },
+  {
+    "id": "coinmetro",
+    "name": "Coinmetro",
+    "isActive": true
+  },
+  {
+    "id": "cryptomus",
+    "name": "Cryptomus",
+    "isActive": true
+  },
+  {
+    "id": "delta",
+    "name": "Delta",
+    "isActive": true
+  },
+  {
+    "id": "ellipx",
+    "name": "Ellipx",
+    "isActive": true
+  },
+  {
+    "id": "fmfwio",
+    "name": "Fmfwio",
+    "isActive": true
+  },
+  {
+    "id": "hashkey",
+    "name": "Hashkey",
+    "isActive": true
+  },
+  {
+    "id": "huobi",
+    "name": "Huobi",
+    "isActive": true
+  },
+  {
+    "id": "kucoinfutures",
+    "name": "Kucoinfutures",
+    "isActive": true
+  },
+  {
+    "id": "krakenfutures",
+    "name": "Krakenfutures",
+    "isActive": true
+  },
+  {
+    "id": "mercado",
+    "name": "Mercado",
+    "isActive": true
+  },
+  {
+    "id": "novadax",
+    "name": "Novadax",
+    "isActive": true
+  },
+  {
+    "id": "okxus",
+    "name": "Okxus",
+    "isActive": true
+  },
+  {
+    "id": "paradex",
+    "name": "Paradex",
+    "isActive": true
   }
 ]

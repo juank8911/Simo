@@ -214,8 +214,22 @@ const getExchangeStatusById = async (req, res) => {
     }
 
     try {
-        // The name parameter is optional for getSingleExchangeStatusAndPrice
-        const status = await getSingleExchangeStatusAndPrice(exchangeId);
+        const config = await readExchangeConfig();
+        const exchangeConfig = config.find(ex => ex.id === exchangeId);
+        const exchangeName = exchangeConfig ? exchangeConfig.name : (exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1));
+
+        // If the exchange is not CCXT-based or not supported, don't try to connect.
+        // This prevents crashes for manual or unsupported exchanges.
+        if (!exchangeConfig || exchangeConfig.connectionType !== 'ccxt') {
+            return res.json({
+                id: exchangeId,
+                name: exchangeName,
+                connected: false,
+                error: `Exchange '${exchangeName}' is not configured for CCXT connection.`
+            });
+        }
+
+        const status = await getSingleExchangeStatusAndPrice(exchangeId, exchangeName);
         res.json(status);
     } catch (error) {
         console.error(`Error in getExchangeStatusById for ${exchangeId}:`, error);
@@ -223,7 +237,6 @@ const getExchangeStatusById = async (req, res) => {
             id: exchangeId,
             name: exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1),
             connected: false,
-            priceXRPUSDT: 'N/A',
             error: 'An unexpected server error occurred while fetching status.'
         });
     }

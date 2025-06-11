@@ -46,6 +46,7 @@
                 <div class="menu-section">
                     <h2 class="menu-header" id="spotsHeader">
                                                 <span class="menu-title-text">SPOTS</span>
+                        <span id="spotAnalysisSpinner" class="spinner spot-spinner" style="display: none;"></span>
                         <span id="spotAnalysisDisplay" class="spot-analysis-display" style="display: none;">
                             <!-- Exchange name will be shown here -->
                         </span>
@@ -83,6 +84,7 @@
             const reanalyzeButton = document.getElementById('reanalyzeButton'); // Re-added
             const mainMenuStatus = document.getElementById('mainMenuStatus'); // For "ok" text
             const spotAnalysisDisplay = document.getElementById('spotAnalysisDisplay');
+            const spotAnalysisSpinner = document.getElementById('spotAnalysisSpinner');
 
             async function fetchAndInitializeExchanges() {
                 try {
@@ -277,50 +279,87 @@
             if (spotsHeader && spotsContentContainer) {
                 // Establecer el estado inicial correcto de la flecha para SPOTS
                 if (spotsContentContainer.classList.contains('collapsed-list')) {
-                    spotsHeader.textContent = 'SPOTS ►';
+                    // spotsHeader.textContent = 'SPOTS ►'; // Replaced
+                    const arrow = spotsHeader.querySelector('.arrow-indicator');
+                    if (arrow) arrow.textContent = '►';
                 } else {
-                    spotsHeader.textContent = 'SPOTS ▼';
+                    // spotsHeader.textContent = 'SPOTS ▼'; // Replaced
+                    const arrow = spotsHeader.querySelector('.arrow-indicator');
+                    if (arrow) arrow.textContent = '▼';
                 }
 
                 spotsHeader.addEventListener('click', () => {
                     spotsContentContainer.classList.toggle('collapsed-list');
                      // Optional: Change arrow indicator
-                    spotsHeader.textContent = spotsContentContainer.classList.contains('collapsed-list') ? 'SPOTS ►' : 'SPOTS ▼';
+                    // spotsHeader.textContent = spotsContentContainer.classList.contains('collapsed-list') ? 'SPOTS ►' : 'SPOTS ▼'; // Replaced
+                    const arrow = spotsHeader.querySelector('.arrow-indicator');
+                    if (arrow) {
+                        arrow.textContent = spotsContentContainer.classList.contains('collapsed-list') ? '►' : '▼';
+                    }
                 });
             }
 
             if (reanalyzeButton) {
                 reanalyzeButton.addEventListener('click', async () => {
-                    if (!spotAnalysisDisplay) return;
-                    if (mainMenuStatus) { // Check if mainMenuStatus exists
-                        mainMenuStatus.textContent = "YES";
-                        mainMenuStatus.style.display = 'inline'; // Make it visible
+                    if (!spotAnalysisDisplay || !spotAnalysisSpinner) return;
+
+                    // Mostrar spinner, ocultar texto anterior
+                    spotAnalysisSpinner.style.display = 'inline-block';
+                    spotAnalysisDisplay.style.display = 'none';
+                    spotAnalysisDisplay.textContent = '';
+                    spotAnalysisDisplay.style.color = ""; // Reset color
+
+                    if (mainMenuStatus) {
+                        mainMenuStatus.textContent = "Procesando...";
+                        mainMenuStatus.style.display = 'inline';
                     }
 
-                    spotAnalysisDisplay.textContent = "binance"; // Mostrar "binance"
-                    spotAnalysisDisplay.style.display = 'inline'; // Hacerlo visible
-
-
-
-                    // Opcional: Ocultar después de un tiempo
-                    setTimeout(() => {
-                        spotAnalysisDisplay.style.display = 'none';
-                        spotAnalysisDisplay.textContent = '';
-                    }, 2000); // Ocultar después de 2 segundos
-
                     try {
-                        // Opcional: Ocultar "ok" después de un tiempo también
-                        setTimeout(() => {
-                            if (mainMenuStatus) {
-                                mainMenuStatus.textContent = "no ok"; // Revert to "no ok"
-                                // mainMenuStatus.style.display = 'none'; // Or hide it again if preferred
-                            }
-                        }, 2000); // Ocultar después de 2 segundos
-                        // Enviar la solicitud al backend (por ahora, no usamos la respuesta para mostrar "binance")
-                        await fetch('/api/spot/spotanalyzer', { method: 'POST' });
-                        console.log("Solicitud de análisis de spot enviada al backend.");
+                        const response = await fetch('/api/spot/spotanalyzer', { method: 'POST' });
+                        const result = await response.json(); 
+
+                        if (response.ok) {
+                            console.log("Análisis de spot completado:", result.message);
+                            if (mainMenuStatus) mainMenuStatus.textContent = "YES";
+                            
+                            spotAnalysisDisplay.textContent = "Actualizado!";
+                            spotAnalysisDisplay.style.color = "green";
+                            spotAnalysisDisplay.style.display = 'inline';
+                            setTimeout(() => {
+                                spotAnalysisDisplay.style.display = 'none';
+                                spotAnalysisDisplay.textContent = '';
+                                spotAnalysisDisplay.style.color = "";
+                                if (mainMenuStatus) mainMenuStatus.textContent = "no ok";
+                            }, 3000);
+                        } else {
+                            console.error("Error en el análisis de spot:", result.message || "Error desconocido");
+                            if (mainMenuStatus) mainMenuStatus.textContent = "Error";
+                            spotAnalysisDisplay.textContent = `Error: ${result.message || 'Fallo'}`;
+                            spotAnalysisDisplay.style.color = "red";
+                            spotAnalysisDisplay.style.display = 'inline';
+                            setTimeout(() => { // Ocultar mensaje de error después de un tiempo
+                                spotAnalysisDisplay.style.display = 'none';
+                                spotAnalysisDisplay.textContent = '';
+                                spotAnalysisDisplay.style.color = "";
+                                if (mainMenuStatus) mainMenuStatus.textContent = "no ok";
+                            }, 5000);
+                        }
                     } catch (error) {
                         console.error('Error al enviar la solicitud de análisis de spot:', error);
+                        if (mainMenuStatus) mainMenuStatus.textContent = "Error";
+                        spotAnalysisDisplay.textContent = "Error de red";
+                        spotAnalysisDisplay.style.color = "red";
+                        spotAnalysisDisplay.style.display = 'inline';
+                        setTimeout(() => { // Ocultar mensaje de error después de un tiempo
+                                spotAnalysisDisplay.style.display = 'none';
+                                spotAnalysisDisplay.textContent = '';
+                                spotAnalysisDisplay.style.color = "";
+                                if (mainMenuStatus) mainMenuStatus.textContent = "no ok";
+                            }, 5000);
+                    } finally {
+                        spotAnalysisSpinner.style.display = 'none'; // Ocultar spinner en todos los casos
+                        spotAnalysisDisplay.style.display = 'none';
+                        spotAnalysisDisplay.textContent = '';
                     }
                 });
             }
