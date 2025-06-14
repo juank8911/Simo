@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import TopSpotData from './TopSpotData.jsx'; // Importar el nuevo componente
 
 const SpotsMenu = () => {
   const [isCollapsed, setIsCollapsed] = useState(true); // Start collapsed
   const [analysisStatus, setAnalysisStatus] = useState('');
+  const [showTopSpotData, setShowTopSpotData] = useState(false);
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -22,6 +24,10 @@ const SpotsMenu = () => {
     }
   };
 
+  const handleToggleTopSpotData = () => {
+    setShowTopSpotData(prev => !prev);
+  };
+
   return (
     <div className="menu-section">
       <h2 className="menu-header" onClick={toggleCollapse}>
@@ -37,9 +43,14 @@ const SpotsMenu = () => {
             </button>
           </li>
           <li>
-            Top
+            <button onClick={handleToggleTopSpotData} className="submenu-button">
+              {showTopSpotData ? 'Ocultar Top Data' : 'Ver Top Data'}
+            </button>
           </li>
         </ul>
+        {showTopSpotData && (
+          <TopSpotData />
+        )}
       </div>
     </div>
   );

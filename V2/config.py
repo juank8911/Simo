@@ -8,7 +8,7 @@ API_KEYS = {
     # Agrega aquí las claves de API para otros exchanges que vayas a usar
 }
 
-WEBSOCKET_URL = "ws://localhost:3001/api/spot/arb"
+WEBSOCKET_URL = "ws://localhost:3000/api/spot/arb"
 UI_WEBSOCKET_URL = "ws://localhost:8000/api/spot/ui"
 TOP_OPPORTUNITY_URL = "http://localhost:3000/api/spot/top-opportunit"
 
