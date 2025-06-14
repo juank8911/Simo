@@ -5,9 +5,11 @@ const path = require('path'); // Added for path.join
 const { PORT } = require('./utils/config'); // Assuming PORT is defined in utils/config
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const { getExchangesStatus, getConfiguredExchanges, getExchangeStatusById, updateExchangeActiveStatus } = require('./controllers/exchangeController');
-const { handleSpotAnalysisRequest } = require('./controllers/spotController'); // Import new controller
-
+const { getExchangesStatus, getConfiguredExchanges, getExchangeStatusById, updateExchangeActiveStatus } = require('./controllers/exchangeController'); //NOSONAR
+const { handleSpotAnalysisRequest, getTopSpotOpportunities } = require('./controllers/spotController'); // Import new controller
+const http = require('http');
+const { Server } = require('socket.io');
+const { emitSpotPricesLoop } = require('./controllers/spotSocketController');
 dotenv.config();
 
 const app = express();
@@ -16,6 +18,16 @@ const app = express();
 app.use(cors()); // Habilita CORS para permitir peticiones desde el frontend
 app.use(express.json()); // Permite a Express parsear JSON
 
+// Create an HTTP server instance from the Express app
+const serveri = http.createServer(app);
+
+// Initialize Socket.IO with the HTTP server instance
+const io = new Server(serveri, {
+  cors: {
+    origin: '*', // Allow all origins, or specify your client's origin
+    methods: ['GET', 'POST'] // Allow specified HTTP methods
+  }
+});
 // Ruta raíz para servir index.html (definida ANTES de static para asegurar que se use esta ruta para '/')
 // app.get('/', (req, res) => {
 //     console.log('Root route hit, attempting to send index.html'); // Log para depuración
@@ -56,6 +68,36 @@ app.use(express.static('src/public'));
  *           type: string
  *           nullable: true
  *           description: Mensaje de error si la conexión falló.
+ */
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     SpotOpportunityValue:
+ *       type: object
+ *       properties:
+ *         exValMin: { type: 'string', description: 'Exchange con el valor mínimo.' }
+ *         exValMax: { type: 'string', description: 'Exchange con el valor máximo.' }
+ *         valMin: { type: 'number', description: 'Valor mínimo.' }
+ *         valMax: { type: 'number', description: 'Valor máximo.' }
+ *         difer: { type: 'string', description: 'Porcentaje de diferencia.' }
+ *     SpotOpportunity:
+ *       type: object
+ *       properties:
+ *         symbol:
+ *           type: string
+ *           description: 'Símbolo del par de monedas (ej. BTC/USDT).'
+ *         name:
+ *           type: string
+ *           description: 'Nombre de la moneda base (ej. BTC).'
+ *         exchanges:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: 'Lista de exchanges donde se encuentra el par.'
+ *         valores:
+ *           $ref: '#/components/schemas/SpotOpportunityValue'
+ *           description: 'Valores de la oportunidad de arbitraje.'
  */
 
 // Configuración de Swagger JSDoc
@@ -179,7 +221,31 @@ app.post('/api/update-exchange-active-status', updateExchangeActiveStatus);
  *       '500':
  *         description: Error durante el análisis de spot.
  */
-app.post('/api/spot/spotanalyzer', handleSpotAnalysisRequest);
+// app.post('/api/spot/spotanalyzer', handleSpotAnalysisRequest); // Original call
+app.post('/api/spot/spotanalyzer', (req, res) => {
+    console.log('ok'); // Muestra "ok" en la consola del servidor
+    res.status(200).json({ message: 'ok' }); // Responde con estado 200 y mensaje "ok"
+});
+
+/**
+ * @swagger
+ * /api/spot/top-opportunities:
+ *   get:
+ *     summary: Obtiene las 20 principales oportunidades de spot con par USDT, ordenadas por mayor diferencia de precio.
+ *     tags: [Spot]
+ *     responses:
+ *       '200':
+ *         description: Una lista de las 20 principales oportunidades de spot.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/SpotOpportunity'
+ *       '500':
+ *         description: Error al obtener las oportunidades de spot.
+ */
+app.get('/api/spot/top-opportunities', getTopSpotOpportunities);
 
 /**
  * @swagger
@@ -208,10 +274,48 @@ app.post('/api/spot/spotanalyzer', handleSpotAnalysisRequest);
  */
 app.get('/api/exchange-status/:exchangeId', getExchangeStatusById);
 
+// Rutas de Spot (movidas a routes/spotRoutes.js)
+/**
+ * @swagger
+ * /api/spot/spotanalyzer:
+ *   post:
+ *     summary: Inicia el análisis de spot y actualiza el archivo de monedas.
+ *     tags: [Spot]
+ *     responses:
+ *       '200':
+ *         description: Análisis de spot completado y archivo de monedas actualizado.
+ *       '500':
+ *         description: Error durante el análisis de spot.
+ */
+/**
+ * @swagger
+ * /api/spot/top-opportunities:
+ *   get:
+ *     summary: Obtiene las 20 principales oportunidades de spot con par USDT, ordenadas por mayor diferencia de precio.
+ *     tags: [Spot]
+ *     responses:
+ *       '200':
+ *         description: Una lista de las 20 principales oportunidades de spot.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/SpotOpportunity'
+ *       '500':
+ *         description: Error al obtener las oportunidades de spot.
+ */
+
+// Importar y usar las rutas de Spot
+const spotRoutes = require('./routes/spotRoutes');
+app.use('/api/spot', spotRoutes);
+
 
 // Iniciar el servidor
-app.listen(PORT, () => {
+const server = http.createServer(app);
+server.listen(PORT, () => {
     console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
     console.log(`Documentación Swagger disponible en http://localhost:${PORT}/api-docs`);
-    console.log('Accede al frontend en http://localhost:3000'); // Asumiendo que el frontend corre en este puerto
+    console.log('Accede al frontend en http://localhost:3000');
+    emitSpotPricesLoop(io);
 });

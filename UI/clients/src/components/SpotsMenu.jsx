@@ -25,7 +25,7 @@ const SpotsMenu = () => {
   return (
     <div className="menu-section">
       <h2 className="menu-header" onClick={toggleCollapse}>
-        <span className="menu-title-text">SPOTS</span>
+        <span className="menu-title-text">Spot</span>
         {analysisStatus && <span className="spot-analysis-display">{analysisStatus}</span>}
         <span className="arrow-indicator">{isCollapsed ? '►' : '▼'}</span>
       </h2>
@@ -33,8 +33,11 @@ const SpotsMenu = () => {
         <ul id="spotsOptionsList" className="submenu-list">
           <li>
             <button onClick={handleReanalyze} className="submenu-button">
-              Reanalizar
+              Analizar
             </button>
+          </li>
+          <li>
+            Top
           </li>
         </ul>
       </div>

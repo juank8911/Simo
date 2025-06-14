@@ -3,6 +3,7 @@ const ccxt = require('ccxt');
 const fs = require('fs').promises;
 const path = require('path');
 
+
 // Define data directory and file paths
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const CONFIG_FILE_PATH = path.join(DATA_DIR, 'exchanges_config.json');
@@ -21,6 +22,22 @@ const readExchangeConfig = async () => {
         }
         console.error('Error reading or parsing exchange config file:', error);
         return [];
+    }
+};
+
+// Helper to read spot_usdt_coins.json
+const readSpotCoinsFileHelper = async () => {
+    try {
+        await fs.access(SPOT_COINS_FILE_PATH);
+        const data = await fs.readFile(SPOT_COINS_FILE_PATH, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.warn(`Spot coins file not found at ${SPOT_COINS_FILE_PATH}.`);
+            return null; // Indicate file not found or empty
+        }
+        console.error('Error reading or parsing spot coins file:', error);
+        throw error; // Rethrow other errors
     }
 };
 
@@ -48,7 +65,7 @@ const handleSpotAnalysisRequest = async (req, res) => {
         }
 
         // --- FASE 1: RECOLECCIÓN DE MONEDAS ---
-        console.log(`Fase 1: Recolectando monedas de ${activeCcxtExchanges.length} exchanges...`);
+        console.log(`Fase 1: Agregando monedas de ${activeCcxtExchanges.length} exchanges...`);
         const initialCoinMap = {};
         const exchangeInstances = {}; // Cache instances for price fetching
 
@@ -63,6 +80,7 @@ const handleSpotAnalysisRequest = async (req, res) => {
                     const market = exchange.markets[symbol];
                     if (market.spot && market.active && market.quote === 'USDT') {
                         if (!initialCoinMap[symbol]) {
+                            
                             initialCoinMap[symbol] = { symbol: market.symbol, name: market.base, exchanges: [] };
                         }
                         if (!initialCoinMap[symbol].exchanges.includes(exchangeId)) {
@@ -70,7 +88,7 @@ const handleSpotAnalysisRequest = async (req, res) => {
                         }
                     }
                 }
-                console.log(`✔ Monedas de ${exchangeId} recolectadas.`);
+                console.log(`✔ Monedas de ${exchangeId} ageregadas.`);
             } catch (e) {
                 console.error(`❌ Error recolectando de ${exchangeId}: ${e.message}. Continuando...`);
             }
@@ -90,14 +108,9 @@ const handleSpotAnalysisRequest = async (req, res) => {
                 continue;
             }
 
-            // Regla 2: Conservar si está en 5 o más exchanges
-            if (numExchanges >= 5) {
-                filteredCoinMap[symbol] = coinData;
-                continue;
-            }
 
             // Regla 3: Verificar precios si está en 2-4 exchanges
-            if (numExchanges >= 2 && numExchanges <= 4) {
+            if (numExchanges >= 2) {
                 const pricePromises = coinData.exchanges.map(exId =>
                     exchangeInstances[exId].fetchTicker(symbol)
                         .then(ticker => ({ ticker, exchangeId: exId })) // Incluir exchangeId
@@ -117,21 +130,29 @@ const handleSpotAnalysisRequest = async (req, res) => {
                 }
 
                 let minPriceData = pricedExchanges[0];
-                let maxPriceData = pricedExchanges[0];
-
+                let maxPriceData = pricedExchanges[0]
+                    console.log("cantidad de exchanges: ", pricedExchanges.length)
+                    console.log("precio min: ", minPriceData.price);
+                    console.log("precio max: ", maxPriceData.price);
                 for (let i = 1; i < pricedExchanges.length; i++) {
                     if (pricedExchanges[i].price < minPriceData.price) {
                         minPriceData = pricedExchanges[i];
+                        console.log("nuevo min: ", minPriceData.price);
                     }
                     if (pricedExchanges[i].price > maxPriceData.price) {
                         maxPriceData = pricedExchanges[i];
+                        console.log("nuevo max: ", maxPriceData.price);
                     }
                 }
-
-                const minPrice = minPriceData.price;
+                // los campos se deben estar en 0 para hacer operaciones 
+                const minPrice = minPriceData.price; 
                 const maxPrice = maxPriceData.price;
                 const exchangeMin = minPriceData.exchangeId;
                 const exchangeMax = maxPriceData.exchangeId;
+                console.log("precio min: ", minPrice);
+                console.log("precio max: ", maxPrice);
+                console.log("exchange min: ", exchangeMin);
+                console.log("exchange max: ", exchangeMax);
 
                 // Fórmula proporcionada: (valor1 - valor2) / ((valor1 * valor2) / 2)
                 let numerator = maxPrice - minPrice;
@@ -141,14 +162,16 @@ const handleSpotAnalysisRequest = async (req, res) => {
                 if (minPrice === 0 && maxPrice === 0) {
                     difference = 0;
                 } else if (minPrice === 0 && maxPrice > 0) { // Denominador (maxPrice * minPrice / 2) sería 0
-                    difference = Infinity;
+                    continue
                 } else if (maxPrice > 0 && minPrice > 0) { // Ambos precios son positivos
-                    const denominatorProduct = maxPrice * minPrice;
+                    const denominatorProduct = maxPrice + minPrice;
                     const denominatorFormulaPart = denominatorProduct / 2;
                     if (denominatorFormulaPart === 0) { // Salvaguarda adicional
                         console.warn(`Denominador cero inesperado para ${symbol} con minPrice ${minPrice}, maxPrice ${maxPrice}`);
                         if (numerator === 0) difference = 0;
                         else difference = Infinity; // O considerar saltar con 'continue'
+                        console.warn(`Saltando ${symbol} debido a precios = 0: min ${minPrice}, max ${maxPrice}`);
+                        continue
                     } else {
                         difference = numerator / denominatorFormulaPart;
                     }
@@ -194,6 +217,61 @@ const handleSpotAnalysisRequest = async (req, res) => {
     }
 };
 
+// Helper function to parse 'difer' string to a number for sorting
+const parseDiferToNumber = (diferStr) => {
+    if (typeof diferStr !== 'string') {
+        return Number.NEGATIVE_INFINITY; // Treat malformed/missing 'difer' as lowest priority
+    }
+    if (diferStr.toUpperCase() === "INFINITY%") {
+        return Number.POSITIVE_INFINITY;
+    }
+    if (diferStr.toUpperCase() === "NAN%") {
+        return Number.NEGATIVE_INFINITY; // Treat NaN as lowest priority
+    }
+    const value = parseFloat(diferStr.replace('%', ''));
+    return isNaN(value) ? Number.NEGATIVE_INFINITY : value;
+};
+
+const getTopSpotOpportunities = async (req, res) => {
+    try {
+        const spotCoinsData = await readSpotCoinsFileHelper();
+
+        // If file not found, is empty, or contains no data (e.g. {}), return an empty array.
+        if (!spotCoinsData || Object.keys(spotCoinsData).length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const allOpportunities = Object.values(spotCoinsData);
+
+        const sortedOpportunities = allOpportunities
+            .map(op => ({
+                ...op,
+                // Ensure 'valores' and 'difer' exist before parsing, assign a numeric value for sorting
+                parsedDifer: (op.valores && typeof op.valores.difer === 'string')
+                    ? parseDiferToNumber(op.valores.difer)
+                    : Number.NEGATIVE_INFINITY
+            }))
+            .sort((a, b) => b.parsedDifer - a.parsedDifer); // Sort descending: highest 'parsedDifer' first
+
+        // Take the top 20 opportunities and remove the temporary 'parsedDifer' field
+        const top20Opportunities = sortedOpportunities.slice(0, 20).map(op => {
+            const { parsedDifer, ...opportunityData } = op;
+            return opportunityData;
+        });
+
+        res.status(200).json(top20Opportunities);
+
+    } catch (error) {
+        console.error("Error in getTopSpotOpportunities:", error);
+        res.status(500).json({
+            message: "Failed to retrieve top spot opportunities due to a server error.",
+            error: error.message // Provide error message for easier debugging
+        });
+    }
+};
+
 module.exports = {
     handleSpotAnalysisRequest,
+    getTopSpotOpportunities,
+    readSpotCoinsFileHelper, // <-- asegúrate de exportarla aquí
 };
