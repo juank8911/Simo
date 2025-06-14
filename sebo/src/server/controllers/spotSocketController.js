@@ -1,12 +1,22 @@
+// spotSocketController.js
 const ccxt = require('ccxt');
 const { readSpotCoinsFileHelper } = require('./spotController');
 let ioInstance = null; // Para guardar la instancia de socket.io
 
 let lastSpotArbData = []; // Guarda el último top 20 emitido
+// Define the target namespace based on the Python client's URL path
+// WEBSOCKET_URL from Python config: "ws://localhost:3001/api/spot/arb"
+// The path component /api/spot/arb is treated as a Socket.IO namespace.
+const SPOT_ARB_DATA_NAMESPACE = '/api/spot/arb';
 
 // Función para obtener y emitir los datos cada 5 segundos
 async function emitSpotPricesLoop(io) {
-    ioInstance = io;
+    ioInstance = io; // Store the main io instance if needed by other parts
+
+    // Get a handle to the specific namespace
+    const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
+    console.log(`SpotSocketController: Emitting 'spot-arb' data to namespace: ${SPOT_ARB_DATA_NAMESPACE}`);
+
     while (true) {
         try {
             const spotCoinsData = await readSpotCoinsFileHelper();
@@ -27,7 +37,7 @@ async function emitSpotPricesLoop(io) {
                 const prices = [];
                 for (const exId of exchanges) {
                     try {
-                        const ex = new ccxt[exId]();
+                        const ex = new ccxtexId;
                         await ex.loadMarkets();
                         const ticker = await ex.fetchTicker(symbol);
                         prices.push({ exchange: exId, price: ticker.ask });
@@ -52,13 +62,13 @@ async function emitSpotPricesLoop(io) {
                         prices: validPrices.map(v => ({ exchange: v.exchange, price: v.price })),
                         percent: percent.toFixed(2)
                     };
-                    io.emit('spot-arb', data);
+                    targetNamespace.emit('spot-arb', data); // Emit to the specific namespace
                     result.push(data);
                 }
             }
             lastSpotArbData = result; // Guarda el último resultado
         } catch (err) {
-            console.error('Error en spotSocketController:', err);
+            console.error(`Error in spotSocketController loop (namespace: ${SPOT_ARB_DATA_NAMESPACE}):`, err);
         }
         await new Promise(r => setTimeout(r, 5000));
     }

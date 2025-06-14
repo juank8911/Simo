@@ -4,7 +4,8 @@ import asyncio
 import websockets
 import json
 import ccxt.async_support as ccxt
-import aiohttp # Importar aiohttp para peticiones HTTP
+import aiohttp
+import websockets.uri # Importar aiohttp para peticiones HTTP
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE
 from model import ArbitrageModel
 
@@ -167,17 +168,57 @@ class CryptoArbitrageApp:
 
     async def execute_arbitrage(self, symbol, buy_exchange_name, sell_exchange_name, buy_price, sell_price, difer_percentage):
         print(f"Iniciando operación de arbitraje para {symbol}...")
-        
-        # Simulación de costos de transacción (ej. 0.1% por operación)
-        transaction_fee_rate = 0.001
-        
+
+        # Obtener costos de trading (fees) usando CCXT para ambos exchanges
+        buy_exchange = self.exchanges.get(buy_exchange_name.lower())
+        sell_exchange = self.exchanges.get(sell_exchange_name.lower())
+
+        buy_fee = None
+        sell_fee = None
+        transfer_fee = None
+
+        # Obtener fee de compra
+        if buy_exchange:
+            try:
+                markets = await buy_exchange.load_markets()
+                market = markets.get(symbol)
+                if market and 'taker' in market['fees']['trading']:
+                    buy_fee = market['fees']['trading']['taker']
+                elif market and 'taker' in market:
+                    buy_fee = market['taker']
+            except Exception as e:
+                print(f"Error obteniendo trading fee de compra en {buy_exchange_name}: {e}")
+
+        # Obtener fee de venta
+        if sell_exchange:
+            try:
+                markets = await sell_exchange.load_markets()
+                market = markets.get(symbol)
+                if market and 'taker' in market['fees']['trading']:
+                    sell_fee = market['fees']['trading']['taker']
+                elif market and 'taker' in market:
+                    sell_fee = market['taker']
+            except Exception as e:
+                print(f"Error obteniendo trading fee de venta en {sell_exchange_name}: {e}")
+
+        # Obtener fee de transferencia (retiro) desde el exchange de compra
+        if buy_exchange:
+            try:
+                currency = symbol.split('/')[0]
+                currencies = await buy_exchange.fetch_currencies()
+                if currency in currencies and 'fee' in currencies[currency]:
+                    transfer_fee = currencies[currency]['fee']
+            except Exception as e:
+                print(f"Error obteniendo withdrawal fee en {buy_exchange_name}: {e}")
+
+        # Las variables buy_fee, sell_fee y transfer_fee quedan disponibles para su uso posterior
         # Calcular ganancia bruta
         gross_profit = ((sell_price - buy_price) / buy_price) * 100
         
         # Calcular costos de transacción (aproximado)
         # Asumimos que el costo se aplica tanto a la compra como a la venta
-        buy_cost = buy_price * transaction_fee_rate
-        sell_cost = sell_price * sell_price * transaction_fee_rate # Corregido: sell_price * transaction_fee_rate
+        buy_cost = buy_price * buy_fee
+        sell_cost = sell_price * sell_fee
         total_transaction_cost_percentage = ((buy_cost + sell_cost) / buy_price) * 100
         
         net_profit_percentage = gross_profit - total_transaction_cost_percentage
@@ -253,7 +294,7 @@ class CryptoArbitrageApp:
             print(f"Error al parsear UI_WEBSOCKET_URL: {e}. Usando puerto por defecto 3001.")
             ui_port = 3001
 
-        async def handler(websocket, path):
+        async def handler(websocket):
             print("Cliente UI conectado.")
             try:
                 while True:
@@ -270,24 +311,22 @@ class CryptoArbitrageApp:
         # Iniciar el servidor WebSocket en el puerto extraído o por defecto
         await websockets.serve(handler, "localhost", ui_port)
 
-async def main():
+async def main(): 
     app = CryptoArbitrageApp()
     
     # Iniciar el cliente WebSocket para consumir datos de arbitraje
-    # y el servidor WebSocket para la UI en paralelo
+    # y el servidor WebSocket para la UI en paralelo 
     await asyncio.gather(
         app.connect_and_process(),
-        app.start_ui_websocket_server() # Descomentar cuando se implemente el servidor de UI en un puerto diferente
+        #app.start_ui_websocket_server() # Descomentar cuando se implemente el servidor de UI en un puerto diferente
     )
 
 if __name__ == "__main__":
     # Para ejecutar el entrenamiento del modelo por separado:
-    # from model import ArbitrageModel, generate_sample_data
-    # model = ArbitrageModel()
-    # training_data = generate_sample_data(500) # Generar más datos para un mejor entrenamiento
-    # model.add_data(training_data)
-    # model.train_model()
-    
+    from model import ArbitrageModel, generate_sample_data
+    model = ArbitrageModel()
+    training_data = generate_sample_data(500) # Generar más datos para un mejor entrenamiento
+    model.add_data(training_data)
+    model.train_model()
+    # Guardar el modelo entrenado
     asyncio.run(main())
-
-

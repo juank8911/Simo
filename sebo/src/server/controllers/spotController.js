@@ -30,6 +30,14 @@ const readSpotCoinsFileHelper = async () => {
     try {
         await fs.access(SPOT_COINS_FILE_PATH);
         const data = await fs.readFile(SPOT_COINS_FILE_PATH, 'utf-8');
+        // Mostrar en consola los 5 primeros datos de "data" juntos
+        try {
+            const parsedData = JSON.parse(data);
+            const values = Object.values(parsedData);
+            console.log("Primeros 5 datos:", values.slice(0, 5));
+        } catch (e) {
+            console.warn("No se pudo parsear o mostrar los primeros 5 datos:", e.message);
+        }
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') {
