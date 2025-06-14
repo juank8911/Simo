@@ -1,0 +1,58 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*
+
+# React
+/build
+/dist
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg-info/
+*.egg
+.DS_Store
+*.sqlite3
+*.db
+*.log
+
+# Entorno virtual Python en V1
+V1/venv/
+V1/.env
+
+# Modelos y datos de IA
+*.pkl
+*.h5
+
+# Otros
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
+*.coverage
+coverage/
+htmlcov/
+.cache/
+.mypy_cache/
+.pytest_cache/
+*.spec
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
