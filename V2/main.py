@@ -285,14 +285,15 @@ class CryptoArbitrageApp:
         try:
             # Parsear la URL para obtener el puerto
             parsed_url = websockets.uri.parse_uri(UI_WEBSOCKET_URL)
+            print(f"Parsed UI_WEBSOCKET_URL: {parsed_url}")
             ui_port = parsed_url.port
             if ui_port is None:
                 # Si no se especifica el puerto, usar el puerto por defecto para ws (80) o wss (443)
                 # Para desarrollo local, asumiremos un puerto por defecto si no está en la URL
-                ui_port = 3001 # Puerto por defecto para el servidor UI si no está en la URL
+                ui_port = 8000 # Puerto por defecto para el servidor UI si no está en la URL
         except Exception as e:
             print(f"Error al parsear UI_WEBSOCKET_URL: {e}. Usando puerto por defecto 3001.")
-            ui_port = 3001
+            ui_port = 8000
 
         async def handler(websocket):
             print("Cliente UI conectado.")
@@ -323,10 +324,10 @@ async def main():
 
 if __name__ == "__main__":
     # Para ejecutar el entrenamiento del modelo por separado:
-    from model import ArbitrageModel, generate_sample_data
-    model = ArbitrageModel()
-    training_data = generate_sample_data(500) # Generar más datos para un mejor entrenamiento
-    model.add_data(training_data)
-    model.train_model()
+    #from model import ArbitrageModel, generate_sample_data
+    #model = ArbitrageModel()
+    #training_data = generate_sample_data(500) # Generar más datos para un mejor entrenamiento
+    #model.add_data(training_data)
+    #model.train_model()
     # Guardar el modelo entrenado
     asyncio.run(main())

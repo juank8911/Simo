@@ -37,7 +37,7 @@ async function emitSpotPricesLoop(io) {
                 const prices = [];
                 for (const exId of exchanges) {
                     try {
-                        const ex = new ccxtexId;
+                        const ex = new ccxt[exId]();
                         await ex.loadMarkets();
                         const ticker = await ex.fetchTicker(symbol);
                         prices.push({ exchange: exId, price: ticker.ask });

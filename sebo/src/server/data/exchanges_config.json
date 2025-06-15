@@ -553,5 +553,25 @@
     "id": "paradex",
     "name": "Paradex",
     "isActive": true
+  },
+  {
+    "id": "btcturk",
+    "name": "Btcturk",
+    "isActive": true
+  },
+  {
+    "id": "btcmarkets",
+    "name": "Btcmarkets",
+    "isActive": true
+  },
+  {
+    "id": "deribit",
+    "name": "Deribit",
+    "isActive": true
+  },
+  {
+    "id": "derive",
+    "name": "Derive",
+    "isActive": true
   }
 ]

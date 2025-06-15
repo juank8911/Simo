@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const TopSpotData = () => {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]); // Initialize with an empty array for list data
   const [connectionStatus, setConnectionStatus] = useState('Initializing...');
   const socketRef = useRef(null);
 
@@ -21,11 +21,19 @@ const TopSpotData = () => {
     socketRef.current.onmessage = (event) => {
       try {
         const receivedData = JSON.parse(event.data);
-        console.log('TopSpotData: Data received from UI WebSocket:', receivedData);
-        setData(receivedData);
+        console.log('TopSpotData: Message received from Python UI WebSocket:', receivedData);
+
+        // Assuming Python sends messages with a 'type' and 'payload'
+        if (receivedData.type === 'arbitrage_data') {
+          setData(receivedData.payload); // Payload is expected to be the array of opportunities
+        } else if (receivedData.type === 'arbitrage_opportunity_analysis' || receivedData.type === 'arbitrage_executed' || receivedData.type === 'arbitrage_error' || receivedData.type === 'arbitrage_skipped_net_loss') {
+          // Handle other types of messages, e.g., update status or log
+          // For now, just log them or prepend to a log array
+          console.log('TopSpotData: Status/Event update:', receivedData);
+        }
       } catch (error) {
         console.error('TopSpotData: Error parsing WebSocket message:', error);
-        setData({ error: 'Failed to parse message', rawData: event.data });
+        // Optionally, display an error message in the UI
       }
     };
 
@@ -33,14 +41,12 @@ const TopSpotData = () => {
       console.error('TopSpotData: WebSocket Error:', error);
       setConnectionStatus('Error connecting');
       setData({ error: 'WebSocket connection error. Is the Python UI WebSocket server running on port 8000?' });
+      // Consider implementing a retry mechanism here
     };
 
     socketRef.current.onclose = (event) => {
       console.log('TopSpotData: WebSocket disconnected from UI server:', event.reason);
       setConnectionStatus(`Closed: ${event.reason || (event.wasClean ? 'Normal closure' : 'Connection died')}`);
-      if (!event.wasClean) {
-        setData({ error: `WebSocket closed unexpectedly. Code: ${event.code}` });
-      }
     };
 
     // Limpieza al desmontar el componente
@@ -56,7 +62,13 @@ const TopSpotData = () => {
       <h4>Live Top Spot Data</h4>
       <p><strong>Status:</strong> {connectionStatus}</p>
       <div style={{ maxHeight: '300px', overflowY: 'auto', background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
-        <pre>{data ? JSON.stringify(data, null, 2) : 'Waiting for data...'}</pre>
+        {Array.isArray(data) && data.length > 0 ? (
+          <pre>{JSON.stringify(data, null, 2)}</pre>
+        ) : typeof data === 'object' && data !== null && data.error ? (
+          <pre>{JSON.stringify(data, null, 2)}</pre>
+        ) : (
+          'Waiting for data or no opportunities found...'
+        )}
       </div>
     </div>
   );
