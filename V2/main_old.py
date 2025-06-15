@@ -5,7 +5,7 @@ import websockets
 import json
 import ccxt.async_support as ccxt
 import aiohttp
-import websockets.uri # Importar websockets.uri para parsear URLs
+import websockets.uri # Importar aiohttp para peticiones HTTP
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE
 from model import ArbitrageModel
 
@@ -173,9 +173,9 @@ class CryptoArbitrageApp:
         buy_exchange = self.exchanges.get(buy_exchange_name.lower())
         sell_exchange = self.exchanges.get(sell_exchange_name.lower())
 
-        buy_fee = 0.0 # Inicializar con 0.0 para evitar errores si no se encuentran
-        sell_fee = 0.0 # Inicializar con 0.0 para evitar errores si no se encuentran
-        transfer_fee = 0.0 # Inicializar con 0.0 para evitar errores si no se encuentran
+        buy_fee = None
+        sell_fee = None
+        transfer_fee = None
 
         # Obtener fee de compra
         if buy_exchange:
@@ -211,33 +211,20 @@ class CryptoArbitrageApp:
             except Exception as e:
                 print(f"Error obteniendo withdrawal fee en {buy_exchange_name}: {e}")
 
-        # Calcular costos de transacción usando los fees obtenidos
-        # Asumimos que los fees son porcentajes (ej. 0.001 para 0.1%)
-        cost_buy = buy_price * buy_fee
-        cost_sell = sell_price * sell_fee
-        cost_transfer = transfer_fee # Este fee suele ser fijo por retiro, no un porcentaje del valor
-
-        # Calcular la ganancia neta en términos absolutos
-        # Cantidad de moneda base comprada (ej. BTC) con 1 USDT de inversión (simplificado)
-        # Esto es una simplificación, en la realidad se compraría una cantidad fija de moneda base
-        # y se calcularía el costo en USDT.
-        # Para el cálculo de arbitraje, nos interesa la diferencia de precios y los costos asociados.
+        # Las variables buy_fee, sell_fee y transfer_fee quedan disponibles para su uso posterior
+        # Calcular ganancia bruta
+        gross_profit = ((sell_price - buy_price) / buy_price) * 100
         
-        # Ganancia bruta en USDT por unidad de moneda base
-        gross_profit_absolute = sell_price - buy_price
+        # Calcular costos de transacción (aproximado)
+        # Asumimos que el costo se aplica tanto a la compra como a la venta
+        buy_cost = buy_price * buy_fee
+        sell_cost = sell_price * sell_fee
+        total_transaction_cost_percentage = ((buy_cost + sell_cost) / buy_price) * 100
         
-        # Costo total de la operación por unidad de moneda base
-        # Aquí se asume que los fees de compra/venta se aplican al valor de la operación
-        # y el fee de transferencia es un costo fijo.
-        total_cost_absolute = cost_buy + cost_sell + cost_transfer
+        net_profit_percentage = gross_profit - total_transaction_cost_percentage
         
-        net_profit_absolute = gross_profit_absolute - total_cost_absolute
-        
-        # Calcular la ganancia neta porcentual sobre el precio de compra
-        net_profit_percentage = (net_profit_absolute / buy_price) * 100 if buy_price > 0 else 0
-        
-        print(f"Ganancia bruta: {gross_profit_absolute:.6f} (abs)")
-        print(f"Costo total de transacción: {total_cost_absolute:.6f} (abs)")
+        print(f"Ganancia bruta: {gross_profit:.2f}%")
+        print(f"Costo total de transacción (aproximado): {total_transaction_cost_percentage:.2f}%")
         print(f"Ganancia neta esperada: {net_profit_percentage:.2f}%")
 
         if net_profit_percentage > 0:
@@ -293,15 +280,20 @@ class CryptoArbitrageApp:
 
     async def start_ui_websocket_server(self):
         # Extraer el puerto de UI_WEBSOCKET_URL (ej. ws://localhost:3001/api/ui -> 3001)
+        # Asumo que UI_WEBSOCKET_URL tendrá el formato correcto para extraer el puerto
+        # Si el formato es diferente, esta lógica necesitará ser ajustada.
         try:
             # Parsear la URL para obtener el puerto
             parsed_url = websockets.uri.parse_uri(UI_WEBSOCKET_URL)
+            print(f"Parsed UI_WEBSOCKET_URL: {parsed_url}")
             ui_port = parsed_url.port
             if ui_port is None:
-                ui_port = 3001 # Puerto por defecto para el servidor UI si no está en la URL
+                # Si no se especifica el puerto, usar el puerto por defecto para ws (80) o wss (443)
+                # Para desarrollo local, asumiremos un puerto por defecto si no está en la URL
+                ui_port = 8000 # Puerto por defecto para el servidor UI si no está en la URL
         except Exception as e:
             print(f"Error al parsear UI_WEBSOCKET_URL: {e}. Usando puerto por defecto 3001.")
-            ui_port = 3001
+            ui_port = 8000
 
         async def handler(websocket):
             print("Cliente UI conectado.")
@@ -327,5 +319,15 @@ async def main():
     # y el servidor WebSocket para la UI en paralelo 
     await asyncio.gather(
         app.connect_and_process(),
-        app.start_ui_websocket_server() # Descomentar cuando 
-(Content truncated due to size limit. Use line ranges to read in chunks)
+        #app.start_ui_websocket_server() # Descomentar cuando se implemente el servidor de UI en un puerto diferente
+    )
+
+if __name__ == "__main__":
+    # Para ejecutar el entrenamiento del modelo por separado:
+    #from model import ArbitrageModel, generate_sample_data
+    #model = ArbitrageModel()
+    #training_data = generate_sample_data(500) # Generar más datos para un mejor entrenamiento
+    #model.add_data(training_data)
+    #model.train_model()
+    # Guardar el modelo entrenado
+    asyncio.run(main())

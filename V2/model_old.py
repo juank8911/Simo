@@ -16,25 +16,62 @@ class ArbitrageModel:
 
     def prepare_data(self):
         # Convertir los datos a un DataFrame de pandas
-        df = pd.DataFrame(self.data)
+        # self.data es una lista de diccionarios, ej:
+        # [{'symbol': 'BTC/USDT', ..., 'valores': {'valMin': 113.2, 'valMax': 114.86, 'difer': '1.47%'}}]
+        if not self.data:
+            raise ValueError("No hay datos para preparar (self.data está vacío).")
+        
+        initial_df = pd.DataFrame(self.data)
         
         # Aquí deberías preprocesar tus datos para el modelo de IA.
         # Por ejemplo, si 'difer' es una cadena como '5%', necesitarías convertirla a un número.
         # Y si 'exchanges' es una lista, podrías necesitar one-hot encoding o similar.
-        
+        print("Datos originales (primeros 5 elementos si hay muchos):")
+        print(self.data[:5]) # Imprimir solo una muestra si self.data es muy grande
+
+        if initial_df.empty:
+            raise ValueError("No hay datos para preparar (DataFrame inicial vacío después de pd.DataFrame(self.data)).")
+
+        # La información relevante ('valMin', 'valMax', 'difer') está anidada en la columna 'valores'.
+        # Cada elemento de la columna 'valores' es un diccionario.
+        if 'valores' not in initial_df.columns:
+            raise ValueError("La columna 'valores' no se encuentra en los datos. "
+                             "La estructura esperada es [{'symbol': ..., 'valores': {'valMin': ..., 'valMax': ..., 'difer': ...}}]")
+
+        # Expandir la columna 'valores' en columnas separadas.
+        # df_processed contendrá columnas como 'valMin', 'valMax', 'difer' directamente.
+        df_processed = initial_df['valores'].apply(pd.Series)
+
+        # Verificar que las columnas necesarias existan después de la expansión
+        required_value_cols = ['valMin', 'valMax', 'difer']
+        for col in required_value_cols:
+            if col not in df_processed.columns:
+                raise ValueError(f"La clave '{col}' no se encontró dentro de los diccionarios de la columna 'valores'. "
+                                 f"Columnas disponibles después de expandir 'valores': {df_processed.columns.tolist()}")
+
         # Ejemplo básico: si 'difer' es el target y las otras columnas son features
         # Esto es un placeholder, la preparación real dependerá de tu modelo y datos.
         
-        # Suponiendo que 'difer' ya es un valor numérico o se puede convertir
-        df['difer_numeric'] = df['difer'].str.replace('%', '').astype(float) / 100
+        # Convertir 'difer' de cadena (ej. '1.47%') a numérico (ej. 0.0147)
+        df_processed['difer_numeric'] = df_processed['difer'].astype(str).str.replace('%', '').astype(float) / 100
         
         # Seleccionar características y objetivo
-        # Esto es un ejemplo, necesitarás definir tus características reales
-        features = ['valMin', 'valMax'] # Ejemplo de características numéricas
+        features = ['valMin', 'valMax'] # Estas características ahora existen en df_processed
         target = 'difer_numeric'
+
+        # Asegurarse de que las características sean numéricas
+        for feature in features:
+            if not pd.api.types.is_numeric_dtype(df_processed[feature]):
+                try:
+                    df_processed[feature] = pd.to_numeric(df_processed[feature])
+                except ValueError as e:
+                    raise ValueError(
+                        f"No se pudo convertir la característica '{feature}' a numérica: {e}. "
+                        f"Verifique los datos en 'valores'."
+                    )
         
-        X = df[features]
-        y = df[target]
+        X = df_processed[features]
+        y = df_processed[target]
         
         return X, y
 
@@ -138,5 +175,3 @@ if __name__ == "__main__":
     
     predicted_difer = model.predict(prediction_input)
     print(f"Diferencia porcentual predicha: {predicted_difer*100:.2f}%")
-
-

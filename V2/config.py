@@ -1,13 +1,18 @@
-# config.py
-WEBSOCKET_URL = "ws://localhost:3001"  # URL base del servidor Socket.IO de Node.js
-NODEJS_NAMESPACE = "/api/spot/arb"     # Namespace para la conexión Socket.IO
-UI_WEBSOCKET_URL = "ws://localhost:8000/api/spot/ui" # URL para el servidor WebSocket de UI de Python
-TOP_OPPORTUNITY_URL = "http://localhost:3000/api/spot/top" # Endpoint HTTP en Node.js
+# Simo/V2/config.py
+
 API_KEYS = {
-    'BINANCE_API_KEY': 'tu_api_key_binance',
-    'BINANCE_SECRET_KEY': 'tu_secret_key_binance',
-    'OKX_API_KEY': 'tu_api_key_okx',
-    'OKX_SECRET_KEY': 'tu_secret_key_okx',
-    # ... otras claves de API
+    "BINANCE_API_KEY": "your_binance_api_key",
+    "BINANCE_SECRET_KEY": "your_binance_secret_key",
+    "OKX_API_KEY": "your_okx_api_key",
+    "OKX_SECRET_KEY": "your_okx_secret_key",
+    # Agrega aquí las claves de API para otros exchanges que vayas a usar
 }
-MIN_PROFIT_PERCENTAGE = 1.0 # Porcentaje mínimo de ganancia para considerar una oportunidad
+
+WEBSOCKET_URL = "ws://localhost:3000/api/spot/arb" # WebSocket de sebo
+UI_WEBSOCKET_URL = "ws://localhost:3031/api/spot/ui" # WebSocket para la UI (V2 -> UI)
+TOP_OPPORTUNITY_URL = "http://localhost:3000/api/spot/top-opportunit"
+
+# Parámetros para la lógica de arbitraje
+MIN_PROFIT_PERCENTAGE = 0.6 # Porcentaje mínimo de ganancia para realizar una operación
+
+
