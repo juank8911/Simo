@@ -4,11 +4,11 @@
 
 # --- Iniciar sebo (backend Node.js) ---
 echo "Iniciando sebo..."
-cd Simo/sebo
+cd sebo
 npm install # Instalar dependencias de Node.js
 npm start > ../sebo.log 2>&1 & # Iniciar en segundo plano y redirigir salida a un log
 sebo_pid=$!
-cd ../..
+cd ..
 echo "sebo iniciado con PID: $sebo_pid"
 
 # Esperar un momento para que sebo se inicialice completamente
@@ -17,11 +17,11 @@ sleep 10
 
 # --- Iniciar UI (frontend React) ---
 echo "Iniciando UI..."
-cd Simo/UI/clients
+cd UI/clients
 npm install # Instalar dependencias de Node.js
 npm run dev > ../../ui.log 2>&1 & # Iniciar en segundo plano y redirigir salida a un log
 ui_pid=$!
-cd ../../..
+cd ../..
 echo "UI iniciada con PID: $ui_pid"
 
 # Esperar un momento para que la UI se inicialice
@@ -30,7 +30,12 @@ sleep 5
 
 # --- Iniciar V2 (aplicación Python) ---
 echo "Iniciando V2..."
-cd Simo/V2
+cd V1
+source ./venv/Scripts/activate
+echo "entorno virtual"
+sleep 15
+cd ..
+cd V2
 pip install -r requirements.txt # Asegurarse de que las dependencias de Python estén instaladas
 python main.py > ../../v2.log 2>&1 & # Iniciar en segundo plano y redirigir salida a un log
 v2_pid=$!

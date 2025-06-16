@@ -1,577 +1,839 @@
 [
   {
-    "id": "btse",
-    "name": "BTSE",
+    "id": "alpaca",
+    "name": "Alpaca",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "bvox",
-    "name": "BVOX",
+    "id": "apex",
+    "name": "Apex",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": null
-  },
-  {
-    "id": "bybit",
-    "name": "Bybit",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "bynoxdex",
-    "name": "Bynoxdex",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": null
-  },
-  {
-    "id": "coinbase",
-    "name": "Coinbase Exchange",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "coinex",
-    "name": "CoinEx",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "coinw",
-    "name": "CoinW",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "cryptocom",
-    "name": "Crypto.com Exchange",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "deepcoin",
-    "name": "Deepcoin",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "digifinex",
-    "name": "DigiFinex",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "ascendex",
     "name": "AscendEX",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "binance",
     "name": "Binance",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "binanceth",
-    "name": "Binance TH",
+    "id": "binancecoinm",
+    "name": "Binance COIN‑M",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": null
-  },
-  {
-    "id": "binancetr",
-    "name": "Binance TR",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "binanceus",
-    "name": "Binance.US",
+    "name": "Binance US",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
+  },
+  {
+    "id": "binanceusdm",
+    "name": "Binance USDⓈ‑M",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "bingx",
     "name": "BingX",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "bitfinex",
     "name": "Bitfinex",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "bitget",
     "name": "Bitget",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "bithumb",
+    "name": "Bithumb",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
+  },
+  {
+    "id": "bitmart",
+    "name": "BitMart",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "bitmex",
+    "name": "BitMEX",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "bitopro",
+    "name": "BitoPro",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "bitrue",
     "name": "Bitrue",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "bitunix",
-    "name": "Bitunix",
+    "id": "bitstamp",
+    "name": "Bitstamp",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "xt",
-    "name": "XT.COM",
+    "id": "bittrade",
+    "name": "BitTrade",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "zoomex",
-    "name": "Zoomex",
+    "id": "bitvavo",
+    "name": "Bitvavo",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "pancakeswap",
-    "name": "PancakeSwap v3 (BSC)",
+    "id": "blockchaincom",
+    "name": "Blockchain.com",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "phemex",
-    "name": "Phemex",
+    "id": "blofin",
+    "name": "BloFin",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "pionex",
-    "name": "Pionex",
+    "id": "bybit",
+    "name": "Bybit",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "poloniex",
-    "name": "Poloniex",
+    "id": "cex",
+    "name": "CEX.IO",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "probit",
-    "name": "ProBit Global",
+    "id": "coinbase",
+    "name": "Coinbase Advanced",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "tapbit",
-    "name": "Tapbit",
+    "id": "coinbaseexchange",
+    "name": "Coinbase Exchange",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "tokocrypto",
-    "name": "Tokocrypto",
+    "id": "coinbaseinternational",
+    "name": "Coinbase International",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "toobit",
-    "name": "Toobit",
+    "id": "coincatch",
+    "name": "CoinCatch",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "weex",
-    "name": "WEEX",
+    "id": "coinex",
+    "name": "CoinEx",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "whitebit",
-    "name": "WhiteBIT",
+    "id": "cryptocom",
+    "name": "Crypto.com",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": true
+  },
+  {
+    "id": "deribit",
+    "name": "Deribit",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
+  },
+  {
+    "id": "derive",
+    "name": "derive",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "gate",
     "name": "Gate.io",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "gemini",
+    "name": "Gemini",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "hashkey",
+    "name": "HashKey Global",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "hollaex",
+    "name": "HollaEx",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "htx",
     "name": "HTX",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "indodax",
-    "name": "Indodax",
+    "id": "hyperliquid",
+    "name": "Hyperliquid",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "independentreserve",
+    "name": "Independent Reserve",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "kraken",
     "name": "Kraken",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "krakenfutures",
+    "name": "Kraken Futures",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "kucoin",
     "name": "KuCoin",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "kucoinfutures",
+    "name": "KuCoin Futures",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "lbank",
     "name": "LBank",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "luno",
+    "name": "luno",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "mexc",
-    "name": "MEXC",
+    "name": "MEXC Global",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "okcoin",
+    "name": "OKCoin",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "okx",
     "name": "OKX",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "okxus",
+    "name": "OKX (US)",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
+  },
+  {
+    "id": "onetrading",
+    "name": "One Trading",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "oxfun",
+    "name": "OXFUN",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "p2b",
+    "name": "p2b",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "paradex",
+    "name": "Paradex",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "phemex",
+    "name": "Phemex",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "poloniex",
+    "name": "Poloniex",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
+  },
+  {
+    "id": "probit",
+    "name": "ProBit",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "tradeogre",
+    "name": "tradeogre",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "upbit",
     "name": "Upbit",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": "ccxt"
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "xrex",
-    "name": "XREX",
+    "id": "vertex",
+    "name": "Vertex",
     "isActive": true,
     "isCoreExchange": true,
-    "connectionType": null
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "apex",
-    "name": "Apex",
+    "id": "whitebit",
+    "name": "WhiteBit",
     "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "alpaca",
-    "name": "Alpaca",
+    "id": "woo",
+    "name": "WOO X",
     "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "bequant",
-    "name": "Bequant",
+    "id": "woofipro",
+    "name": "WOOFI PRO",
     "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "bigone",
-    "name": "Bigone",
+    "id": "xt",
+    "name": "XT",
     "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "binancecoinm",
-    "name": "Binancecoinm",
+    "id": "aax",
+    "name": "Aax",
     "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "binanceusdm",
-    "name": "Binanceusdm",
-    "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "bit2c",
-    "name": "Bit2c",
-    "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "bitbns",
-    "name": "Bitbns",
-    "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "bitbank",
     "name": "Bitbank",
     "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "bitbns",
+    "name": "Bitbns",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "bitflyer",
     "name": "Bitflyer",
     "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "coinbaseinternational",
-    "name": "Coinbaseinternational",
-    "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "coinbaseexchange",
-    "name": "Coinbaseexchange",
-    "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "coinbaseadvanced",
-    "name": "Coinbaseadvanced",
-    "isActive": true,
-    "isCoreExchange": false,
-    "connectionType": "ccxt"
-  },
-  {
-    "id": "zonda",
-    "name": "Zonda",
-    "isActive": false
-  },
-  {
-    "id": "zaif",
-    "name": "Zaif",
-    "isActive": false
-  },
-  {
-    "id": "yobit",
-    "name": "Yobit",
-    "isActive": false
-  },
-  {
-    "id": "woofipro",
-    "name": "Woofipro",
-    "isActive": false
-  },
-  {
-    "id": "woo",
-    "name": "Woo",
-    "isActive": true
-  },
-  {
-    "id": "wavesexchange",
-    "name": "Wavesexchange",
-    "isActive": true
-  },
-  {
-    "id": "vertex",
-    "name": "Vertex",
-    "isActive": false
-  },
-  {
-    "id": "tradeogre",
-    "name": "Tradeogre",
-    "isActive": false
-  },
-  {
-    "id": "timex",
-    "name": "Timex",
-    "isActive": true
-  },
-  {
-    "id": "blockchaincom",
-    "name": "Blockchaincom",
-    "isActive": true
-  },
-  {
-    "id": "blofin",
-    "name": "Blofin",
-    "isActive": true
-  },
-  {
-    "id": "btcalpha",
-    "name": "Btcalpha",
-    "isActive": true
-  },
-  {
-    "id": "btcbox",
-    "name": "Btcbox",
-    "isActive": true
-  },
-  {
-    "id": "bittrade",
-    "name": "Bittrade",
-    "isActive": true
-  },
-  {
-    "id": "bitvavo",
-    "name": "Bitvavo",
-    "isActive": true
-  },
-  {
-    "id": "bitteam",
-    "name": "Bitteam",
-    "isActive": true
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
     "id": "bithumb",
     "name": "Bithumb",
-    "isActive": true
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "bitmart",
     "name": "Bitmart",
-    "isActive": true
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "bitopro",
-    "name": "Bitopro",
-    "isActive": true
+    "id": "bittrex",
+    "name": "Bittrex",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "bitso",
-    "name": "Bitso",
-    "isActive": true
+    "id": "blockchaincom",
+    "name": "Blockchaincom",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "coincatch",
-    "name": "Coincatch",
-    "isActive": true
+    "id": "braziliex",
+    "name": "Braziliex",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "coinmetro",
-    "name": "Coinmetro",
-    "isActive": true
+    "id": "cex",
+    "name": "Cex",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "cryptomus",
-    "name": "Cryptomus",
-    "isActive": true
+    "id": "coinbase",
+    "name": "Coinbase",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "delta",
-    "name": "Delta",
-    "isActive": true
+    "id": "coinbasepro",
+    "name": "Coinbasepro",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "ellipx",
-    "name": "Ellipx",
-    "isActive": true
+    "id": "coincheck",
+    "name": "Coincheck",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "fmfwio",
-    "name": "Fmfwio",
-    "isActive": true
+    "id": "crypto",
+    "name": "Crypto",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "hashkey",
-    "name": "Hashkey",
-    "isActive": true
+    "id": "exmo",
+    "name": "Exmo",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "ftx",
+    "name": "Ftx",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "gemini",
+    "name": "Gemini",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
+  },
+  {
+    "id": "hitbtc",
+    "name": "Hitbtc",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
     "id": "huobi",
     "name": "Huobi",
-    "isActive": true
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "kucoinfutures",
-    "name": "Kucoinfutures",
-    "isActive": true
+    "id": "indodax",
+    "name": "Indodax",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "krakenfutures",
-    "name": "Krakenfutures",
-    "isActive": true
+    "id": "liquid",
+    "name": "Liquid",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "mercado",
-    "name": "Mercado",
-    "isActive": true
+    "id": "okcoin",
+    "name": "Okcoin",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": true
   },
   {
-    "id": "novadax",
-    "name": "Novadax",
-    "isActive": true
+    "id": "probit",
+    "name": "ProBit",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "okxus",
-    "name": "Okxus",
-    "isActive": true
+    "id": "upbit",
+    "name": "Upbit",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "paradex",
-    "name": "Paradex",
-    "isActive": true
+    "id": "wazirx",
+    "name": "Wazirx",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "btcturk",
-    "name": "Btcturk",
-    "isActive": true
+    "id": "zb",
+    "name": "Zb",
+    "isActive": true,
+    "isCoreExchange": true,
+    "connectionType": "ccxt",
+    "conexion": false
   },
   {
-    "id": "btcmarkets",
-    "name": "Btcmarkets",
-    "isActive": true
+    "id": "bvox",
+    "name": "BVOX",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
   },
   {
-    "id": "deribit",
-    "name": "Deribit",
-    "isActive": true
+    "id": "bynoxdex",
+    "name": "Bynoxdex",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
   },
   {
-    "id": "derive",
-    "name": "Derive",
+    "id": "coinw",
+    "name": "CoinW",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "deepcoin",
+    "name": "Deepcoin",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "dex-trade",
+    "name": "Dex-Trade",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "digifinex",
+    "name": "DigiFinex",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "gate",
+    "name": "Gate",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "hotcoin",
+    "name": "Hotcoin",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "orangex",
+    "name": "OrangeX",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "ourbit",
+    "name": "Ourbit",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "pancakeswapv3(bsc)",
+    "name": "PancakeSwap v3 (BSC)",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "pionex",
+    "name": "Pionex",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "toobit",
+    "name": "Toobit",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "weex",
+    "name": "WEEX",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "whitebit",
+    "name": "WhiteBIT",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": true
+  },
+  {
+    "id": "xt.com",
+    "name": "XT.COM",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "zoomex",
+    "name": "Zoomex",
+    "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "undefined",
+    "conexion": false
+  },
+  {
+    "id": "bit2c",
+    "name": "Bit2c",
     "isActive": true
   }
 ]

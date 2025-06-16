@@ -327,5 +327,8 @@ async def main():
     # y el servidor WebSocket para la UI en paralelo 
     await asyncio.gather(
         app.connect_and_process(),
-        app.start_ui_websocket_server() # Descomentar cuando 
-(Content truncated due to size limit. Use line ranges to read in chunks)
+        app.start_ui_websocket_server()
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())

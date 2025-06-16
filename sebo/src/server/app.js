@@ -143,7 +143,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *       '500':
  *         description: Error al obtener el estado de los exchanges.
  */
-app.get('/api/exchanges-status', getExchangesStatus);
+app.get('/api/exchanges-status/:exchangeId?', getExchangesStatus);
 
 /**
  * @swagger
@@ -274,19 +274,7 @@ app.get('/api/spot/top-opportunities', getTopSpotOpportunities);
  */
 app.get('/api/exchange-status/:exchangeId', getExchangeStatusById);
 
-// Rutas de Spot (movidas a routes/spotRoutes.js)
-/**
- * @swagger
- * /api/spot/spotanalyzer:
- *   post:
- *     summary: Inicia el análisis de spot y actualiza el archivo de monedas.
- *     tags: [Spot]
- *     responses:
- *       '200':
- *         description: Análisis de spot completado y archivo de monedas actualizado.
- *       '500':
- *         description: Error durante el análisis de spot.
- */
+
 /**
  * @swagger
  * /api/spot/top-opportunities:
@@ -317,5 +305,5 @@ server.listen(PORT, () => {
     console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
     console.log(`Documentación Swagger disponible en http://localhost:${PORT}/api-docs`);
     console.log('Accede al frontend en http://localhost:3000');
-    emitSpotPricesLoop(io);
+    // emitSpotPricesLoop(io);
 });

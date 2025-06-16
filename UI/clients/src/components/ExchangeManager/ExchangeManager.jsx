@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Layout from '../components/Layout/Layout.jsx';
-import Sidebar from '../components/Sidebar/Sidebar.jsx';
-import ActiveExchangesTable from '../components/ActiveExchangesTable.jsx';
-import SpotsMenu from '../components/SpotsMenu/SpotsMenu';
+import Sidebar from '../Sidebar/Sidebar';
+import ActiveExchangesTable from '../ActiveExchangesTable/ActiveExchangesTable';
 
-function App() {
+const ExchangeManager = () => {
   const [allExchanges, setAllExchanges] = useState([]);
   const [activeExchanges, setActiveExchanges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showConexion, setShowConexion] = useState(false);
 
+  // Lógica para obtener el estado de conexión de un exchange
   const fetchExchangeStatus = useCallback(async (exchangeId, exchangeName, connectionType, ccxtSupported) => {
     if (connectionType === "ccxt" && !ccxtSupported) {
       return { 
@@ -36,6 +36,7 @@ function App() {
     }
   }, []);
 
+  // Actualiza el estado de activación en el backend
   const updateServerActiveStatus = async (exchangeId, isActive, exchangeName) => {
     try {
       await fetch('/api/update-exchange-active-status', {
@@ -48,6 +49,7 @@ function App() {
     }
   };
 
+  // Inicializa la lista de exchanges y su estado de conexión
   useEffect(() => {
     const fetchAndInitialize = async () => {
       setLoading(true);
@@ -106,6 +108,7 @@ function App() {
     fetchAndInitialize();
   }, [fetchExchangeStatus]);
 
+  // Maneja el cambio de activación de un exchange
   const handleExchangeChange = useCallback(async (event) => {
     const checkbox = event.target;
     const exchangeId = checkbox.dataset.exchangeId;
@@ -133,18 +136,20 @@ function App() {
   }, [fetchExchangeStatus]);
 
   return (
-    <Layout>
+    <div className="page-container" style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar
         allExchanges={allExchanges}
         activeExchanges={activeExchanges}
         loading={loading}
         error={error}
         onExchangeChange={handleExchangeChange}
+        onShowConexion={() => setShowConexion(!showConexion)}
       />
-      <ActiveExchangesTable activeExchanges={activeExchanges} />
-      <SpotsMenu />
-    </Layout>
+      <div style={{ flex: 1, padding: '1rem' }}>
+        <ActiveExchangesTable activeExchanges={activeExchanges} />
+      </div>
+    </div>
   );
-}
+};
 
-export default App;
+export default ExchangeManager;

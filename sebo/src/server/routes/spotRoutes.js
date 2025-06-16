@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getLastSpotArb } = require('../controllers/spotSocketController');
+const {handleSpotAnalysisRequest}= require('../controllers/spotController');
 
 // ...otras rutas...
 
@@ -42,5 +43,22 @@ const { getLastSpotArb } = require('../controllers/spotSocketController');
  *                     example: "200.00"
  */
 router.get('/arb', getLastSpotArb);
+
+
+
+/**
+ * @swagger
+ * /api/spot/spotanalyzer:
+ *   post:
+ *     summary: Inicia el análisis de spot y actualiza el archivo de monedas.
+ *     tags: [Spot]
+ *     responses:
+ *       '200':
+ *         description: Análisis de spot completado y archivo de monedas actualizado.
+ *       '500':
+ *         description: Error durante el análisis de spot.
+ */
+router.get('/analysis', handleSpotAnalysisRequest);
+
 
 module.exports = router;

@@ -97,7 +97,6 @@ const getSingleExchangeStatusAndPrice = async (exchangeId, exchangeNameProvided)
         id: exchangeId,
         name: exchangeNameProvided || (exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1)), // Use provided name or derive from ID
         connected: false,
-        priceXRPUSDT: 'N/A',
         error: null
     };
 
@@ -112,14 +111,6 @@ const getSingleExchangeStatusAndPrice = async (exchangeId, exchangeNameProvided)
         // Intentar cargar los mercados para verificar conectividad básica
         await exchange.loadMarkets();
         result.connected = true;
-
-        // Intentar obtener el precio de XRP/USDT
-        if (exchange.markets['XRP/USDT']) {
-            const ticker = await exchange.fetchTicker('XRP/USDT');
-            result.priceXRPUSDT = ticker.last;
-        } else {
-            result.priceXRPUSDT = 'Pair XRP/USDT not available';
-        }
 
     } catch (e) {
         result.connected = false;
@@ -150,7 +141,6 @@ const getExchangesStatus = async (req, res) => {
                 id: 'unknown',
                 name: 'Unknown Exchange',
                 connected: false,
-                priceXRPUSDT: 'N/A',
                 error: promiseResult.reason ? promiseResult.reason.message : 'Unknown error'
             };
         }
@@ -266,6 +256,22 @@ const updateExchangeActiveStatus = async (req, res) => {
     } catch (error) {
         console.error('Error updating exchange active status:', error);
         res.status(500).json({ error: 'Failed to update exchange active status.' });
+    }
+};
+
+// Nueva función para actualizar el campo "conexion"
+const updateExchangeConexionStatus = async (exchangeId, status) => {
+    let config = await readExchangeConfig();
+    let updated = false;
+    config = config.map(ex => {
+        if (ex.id === exchangeId) {
+            updated = true;
+            return { ...ex, conexion: status };
+        }
+        return ex;
+    });
+    if (updated) {
+        await writeExchangeConfig(config);
     }
 };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import TopSpotData from './TopSpotData.jsx'; // Importar el nuevo componente
+import TopSpotData from '../TopSpotData/TopSpotData.jsx'; // Importar el nuevo componente
 
 const SpotsMenu = () => {
   const [isCollapsed, setIsCollapsed] = useState(true); // Start collapsed
