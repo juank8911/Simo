@@ -1,36 +1,102 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import styles from './ActiveExchangesTable.module.css';
 
-const ActiveExchangesTable = ({ activeExchanges }) => {
+const API_BASE = 'http://localhost:3000/api/exchange-unique';
+
+const ActiveExchangesTable = ({ selectedExchanges = [] }) => {
+  const [exchangeStatus, setExchangeStatus] = useState({}); // { [id]: { connected, error } }
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkConnections = async () => {
+      const statusObj = {};
+      for (const ex of selectedExchanges) {
+        // Inicializa como pendiente
+        statusObj[ex.id] = { connected: false, error: null, loading: true };
+        setExchangeStatus(prev => ({ ...prev, ...statusObj }));
+
+        try {
+          const res = await fetch(`${API_BASE}/${ex.id}`);
+          const data = await res.json();
+          if (cancelled) return;
+          statusObj[ex.id] = {
+            connected: !!data.connected,
+            error: data.connected ? null : data.error || 'Error de conexión',
+            loading: false
+          };
+        } catch (err) {
+          if (cancelled) return;
+          statusObj[ex.id] = {
+            connected: false,
+            error: 'Error de red',
+            loading: false
+          };
+        }
+        setExchangeStatus(prev => ({ ...prev, ...statusObj }));
+      }
+    };
+
+    if (selectedExchanges.length > 0) {
+      setExchangeStatus({});
+      checkConnections();
+    } else {
+      setExchangeStatus({});
+    }
+    return () => { cancelled = true; };
+  }, [selectedExchanges]);
+
   return (
-    <div className="main-content">
-      <h1>Active Exchange Status</h1>
-      <table id="activeExchangesTable">
+    <div>
+      <h2>Conexión de Exchanges Seleccionados</h2>
+      <table id="activeExchangesTable" className={styles.activeExchangesTable}>
         <thead>
           <tr>
             <th id="exchangeNameHeader">Exchange Name</th>
             <th>Status</th>
-            <th id="apiAccessHeaderIcons">
-              <span className="api-header-icon" title="Acceso API Pública">👤</span>
-              <span className="api-header-icon" title="Acceso API Privada">🔒</span>
+            <th>
+              <span id="apiAccessHeaderIcons" className={styles.apiAccessHeaderIcons}>
+                <span className="api-header-icon" title="API Pública">👤</span>
+                <span className="api-header-icon" title="API Privada">🔒</span>
+              </span>
             </th>
             <th>Error Message</th>
           </tr>
         </thead>
         <tbody>
-          {activeExchanges.length === 0 ? (
-            <tr id="noActiveExchangesMessage"><td colSpan="4">No exchanges selected. Check an exchange in the sidebar.</td></tr>
+          {selectedExchanges.length === 0 ? (
+            <tr id="noActiveExchangesMessage">
+              <td colSpan={4}>No hay exchanges seleccionados.</td>
+            </tr>
           ) : (
-            activeExchanges.map(exchange => (
-              <tr key={exchange.id} data-exchange-id={exchange.id}>
-                <td>{exchange.name}</td>
-                <td>{exchange.status}</td>
-                <td>
-                  <span className={`api-icon public-api-icon ${exchange.status === 'Online' ? 'green' : 'red'}`} title={`Public API: ${exchange.status}`}></span>
-                  <span className="api-icon private-api-icon red" title="Private API: Not Configured"></span>
-                </td>
-                <td>{exchange.error || ''}</td>
-              </tr>
-            ))
+            selectedExchanges.map(ex => {
+              const status = exchangeStatus[ex.id] || {};
+              return (
+                <tr key={ex.id}>
+                  <td>{ex.name}</td>
+                  <td>
+                    {status.loading
+                      ? <span className={styles.statusConnecting}>Conectando...</span>
+                      : status.connected
+                        ? <span className={styles.statusOnline}>Online</span>
+                        : <span className={styles.statusError}>Desconectado</span>
+                    }
+                  </td>
+                  <td>
+                    <span
+                      className={`api-icon ${status.connected ? styles.green : styles.red}`}
+                      title="API Pública"
+                    ></span>
+                    <span
+                      className={`api-icon private-api-icon ${styles.red}`}
+                      title="API Privada"
+                    ></span>
+                  </td>
+                  <td className={styles.errorMessageCell}>
+                    {status.error || '-'}
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

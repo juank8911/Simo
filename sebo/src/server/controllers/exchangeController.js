@@ -211,6 +211,8 @@ const getExchangeStatusById = async (req, res) => {
         // If the exchange is not CCXT-based or not supported, don't try to connect.
         // This prevents crashes for manual or unsupported exchanges.
         if (!exchangeConfig || exchangeConfig.connectionType !== 'ccxt') {
+            updateExchangeConexionStatus(exchangeId, false); // Update connection status
+            console.warn(`Exchange '${exchangeName}' is not configured for CCXT connection.`);
             return res.json({
                 id: exchangeId,
                 name: exchangeName,
@@ -220,6 +222,8 @@ const getExchangeStatusById = async (req, res) => {
         }
 
         const status = await getSingleExchangeStatusAndPrice(exchangeId, exchangeName);
+        updateExchangeConexionStatus(exchangeId, true); // Update connection status
+        // If the exchange is not connected, we can still return the status with an error message
         res.json(status);
     } catch (error) {
         console.error(`Error in getExchangeStatusById for ${exchangeId}:`, error);
@@ -231,6 +235,7 @@ const getExchangeStatusById = async (req, res) => {
         });
     }
 };
+
 
 // Endpoint to update the active status of an exchange
 const updateExchangeActiveStatus = async (req, res) => {

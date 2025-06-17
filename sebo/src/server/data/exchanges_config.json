@@ -5,7 +5,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "apex",
@@ -21,7 +21,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "binance",
@@ -29,7 +29,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "binancecoinm",
@@ -53,7 +53,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bingx",
@@ -61,7 +61,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bitfinex",
@@ -69,7 +69,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bitget",
@@ -77,7 +77,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bithumb",
@@ -93,7 +93,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bitmex",
@@ -101,7 +101,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bitopro",
@@ -117,7 +117,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bitstamp",
@@ -125,7 +125,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bittrade",
@@ -133,7 +133,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bitvavo",
@@ -165,7 +165,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "cex",
@@ -173,7 +173,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "coinbase",
@@ -181,7 +181,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "coinbaseexchange",
@@ -205,7 +205,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "coinex",
@@ -213,7 +213,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "cryptocom",
@@ -237,7 +237,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "gate",
@@ -245,7 +245,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "gemini",
@@ -253,7 +253,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "hashkey",
@@ -261,7 +261,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "hollaex",
@@ -277,7 +277,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "hyperliquid",
@@ -285,7 +285,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "independentreserve",
@@ -293,7 +293,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "kraken",
@@ -301,7 +301,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "krakenfutures",
@@ -309,7 +309,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": true
+    "conexion": false
   },
   {
     "id": "kucoin",
@@ -317,7 +317,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "kucoinfutures",
@@ -341,7 +341,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "mexc",
@@ -349,7 +349,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "okcoin",
@@ -365,7 +365,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "okxus",
@@ -381,7 +381,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "oxfun",
@@ -389,7 +389,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "p2b",
@@ -397,7 +397,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "paradex",
@@ -405,7 +405,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "phemex",
@@ -413,7 +413,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "poloniex",
@@ -429,7 +429,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "tradeogre",
@@ -445,7 +445,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "vertex",
@@ -453,7 +453,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "whitebit",
@@ -469,7 +469,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "woofipro",
@@ -485,39 +485,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "aax",
-    "name": "Aax",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "bitbank",
-    "name": "Bitbank",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "bitbns",
-    "name": "Bitbns",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "bitflyer",
-    "name": "Bitflyer",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bithumb",
@@ -528,24 +496,8 @@
     "conexion": true
   },
   {
-    "id": "bitmart",
-    "name": "Bitmart",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
     "id": "bittrex",
     "name": "Bittrex",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "blockchaincom",
-    "name": "Blockchaincom",
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
@@ -557,23 +509,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "cex",
-    "name": "Cex",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "coinbase",
-    "name": "Coinbase",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "coinbasepro",
@@ -592,20 +528,12 @@
     "conexion": true
   },
   {
-    "id": "crypto",
-    "name": "Crypto",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
     "id": "exmo",
     "name": "Exmo",
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "ftx",
@@ -613,15 +541,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "gemini",
-    "name": "Gemini",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "hitbtc",
@@ -632,28 +552,12 @@
     "conexion": true
   },
   {
-    "id": "huobi",
-    "name": "Huobi",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
     "id": "indodax",
     "name": "Indodax",
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
     "conexion": true
-  },
-  {
-    "id": "liquid",
-    "name": "Liquid",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
   },
   {
     "id": "okcoin",
@@ -664,36 +568,12 @@
     "conexion": true
   },
   {
-    "id": "probit",
-    "name": "ProBit",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "upbit",
-    "name": "Upbit",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
     "id": "wazirx",
     "name": "Wazirx",
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
-  },
-  {
-    "id": "zb",
-    "name": "Zb",
-    "isActive": true,
-    "isCoreExchange": true,
-    "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "bvox",
@@ -738,14 +618,6 @@
   {
     "id": "digifinex",
     "name": "DigiFinex",
-    "isActive": false,
-    "isCoreExchange": false,
-    "connectionType": "undefined",
-    "conexion": false
-  },
-  {
-    "id": "gate",
-    "name": "Gate",
     "isActive": false,
     "isCoreExchange": false,
     "connectionType": "undefined",
@@ -808,14 +680,6 @@
     "conexion": false
   },
   {
-    "id": "whitebit",
-    "name": "WhiteBIT",
-    "isActive": false,
-    "isCoreExchange": false,
-    "connectionType": "undefined",
-    "conexion": true
-  },
-  {
     "id": "xt.com",
     "name": "XT.COM",
     "isActive": false,
@@ -834,6 +698,7 @@
   {
     "id": "bit2c",
     "name": "Bit2c",
-    "isActive": true
+    "isActive": false,
+    "conexion": false
   }
 ]

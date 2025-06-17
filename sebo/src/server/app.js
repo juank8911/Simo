@@ -5,14 +5,21 @@ const path = require('path'); // Added for path.join
 const { PORT } = require('./utils/config'); // Assuming PORT is defined in utils/config
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const { getExchangesStatus, getConfiguredExchanges, getExchangeStatusById, updateExchangeActiveStatus } = require('./controllers/exchangeController'); //NOSONAR
+const { getExchangesStatus, getExchangeStatusById, getConfiguredExchanges, updateExchangeActiveStatus } = require('./controllers/exchangeController');
 const { handleSpotAnalysisRequest, getTopSpotOpportunities } = require('./controllers/spotController'); // Import new controller
 const http = require('http');
 const { Server } = require('socket.io');
 const { emitSpotPricesLoop } = require('./controllers/spotSocketController');
+// const { connectDB } = require('./utils/db'); // Comentado o eliminado si no se usa
+const { connectDB } = require('./data/dataBase/connectio'); // Importar connectDB desde connectio.js
+const {addExchanges} = require('./controllers/dbCotroller');
+
 dotenv.config();
 
 const app = express();
+
+// Conectar a MongoDB al iniciar la app
+connectDB();
 
 // Middleware
 app.use(cors()); // Habilita CORS para permitir peticiones desde el frontend
@@ -143,8 +150,51 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *       '500':
  *         description: Error al obtener el estado de los exchanges.
  */
-app.get('/api/exchanges-status/:exchangeId?', getExchangesStatus);
+app.get('/api/exchanges-status', getExchangesStatus);
 
+
+/**
+ * @swagger
+ * /api/exchange-unique/{exchangeId}:
+ *   get:
+ *     summary: Obtiene el estado de conexión para un exchange específico.
+ *     tags: [Exchanges]
+ *     parameters:
+ *       - in: path
+ *         name: exchangeId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: ID del exchange (CCXT ID).
+ *     responses:
+ *       '200':
+ *         description: Estado del exchange.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: ID del exchange (CCXT ID).
+ *                 name:
+ *                   type: string
+ *                   description: Nombre del exchange.
+ *                 connected:
+ *                   type: boolean
+ *                   description: Estado de conexión.
+ *                 error:
+ *                   type: string
+ *                   nullable: true
+ *                   description: Mensaje de error si la conexión falló.
+ *       '400':
+ *         description: ID del exchange no proporcionado.
+ *       '500':
+ *         description: Error al obtener el estado del exchange.
+ */
+app.get('/api/exchange-unique/:exchangeId?', getExchangeStatusById);
+
+app.get('/addexchanges',addExchanges());
 /**
  * @swagger
  * /api/configured-exchanges:

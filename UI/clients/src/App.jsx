@@ -1,23 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Sidebar from './components/Sidebar/Sidebar.jsx';
+import Layout from './components/Layout/Layout.jsx';
 import ActiveExchangesTable from './components/ActiveExchangesTable/ActiveExchangesTable.jsx';
 import SpotsMenu from './components/SpotsMenu/SpotsMenu.jsx';
-import styles from './App.module.css';
 
 function App() {
+  const [allExchanges, setAllExchanges] = useState([]);
+  const [selectedExchanges, setSelectedExchanges] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/configured-exchanges')
+      .then(res => res.json())
+      .then(data => setAllExchanges(data));
+  }, []);
+
+  useEffect(() => {
+    setSelectedExchanges(allExchanges.filter(ex => ex.isActive));
+  }, [allExchanges]);
+
   return (
     <Router>
-      <div className={styles.layout}>
-        <Sidebar />
-        <main className={styles.main}>
-          <Routes>
-            <Route path="/conexion" element={<ActiveExchangesTable />} />
-            <Route path="/spots" element={<SpotsMenu />} />
-            <Route path="/" element={<div>Bienvenido al Dashboard</div>} />
-          </Routes>
-        </main>
-      </div>
+      <Routes>
+        <Route path="/" element={
+          <Layout
+            allExchanges={allExchanges}
+            setAllExchanges={setAllExchanges}
+          />
+        }>
+          <Route path="conexion" element={<ActiveExchangesTable selectedExchanges={selectedExchanges} />} />
+          <Route path="spots" element={<SpotsMenu />} />
+          <Route index element={<div>Bienvenido al Dashboard</div>} />
+        </Route>
+      </Routes>
     </Router>
   );
 }

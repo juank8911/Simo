@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getLastSpotArb } = require('../controllers/spotSocketController');
-const {handleSpotAnalysisRequest}= require('../controllers/spotController');
+const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controllers/spotController');
 
 // ...otras rutas...
 
@@ -43,9 +43,7 @@ const {handleSpotAnalysisRequest}= require('../controllers/spotController');
  *                     example: "200.00"
  */
 router.get('/arb', getLastSpotArb);
-
-
-
+// Rutas de Spot (movidas a routes/spotRoutes.js)
 /**
  * @swagger
  * /api/spot/spotanalyzer:
@@ -59,6 +57,8 @@ router.get('/arb', getLastSpotArb);
  *         description: Error durante el análisis de spot.
  */
 router.get('/analysis', handleSpotAnalysisRequest);
+
+router.get('/exchange-price', handleSpotExchangePrice);
 
 
 module.exports = router;

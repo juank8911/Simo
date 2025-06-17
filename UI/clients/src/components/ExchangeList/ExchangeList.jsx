@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styles from '../Sidebar/Sidebar.module.css';
 
-const ExchangeList = () => {
-  const [allExchanges, setAllExchanges] = useState([]);
+const ExchangeList = ({ allExchanges, setAllExchanges }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(true); // Estado para desplegar/ocultar
@@ -77,6 +76,15 @@ const ExchangeList = () => {
     );
   }
 
+  const uniqueExchanges = [];
+  const seen = new Set();
+  allExchanges.forEach(ex => {
+    if (ex.id && !seen.has(ex.id)) {
+      uniqueExchanges.push(ex);
+      seen.add(ex.id);
+    }
+  });
+
   return (
     <div className="menu-section">
       <button className={styles.menuHeader} onClick={toggleList}>
@@ -85,8 +93,8 @@ const ExchangeList = () => {
       </button>
       {isOpen && (
         <ul id="allExchangesList" className="menu-list">
-          {allExchanges.length === 0 && <li>No exchanges available.</li>}
-          {allExchanges.map(exchange => (
+          {uniqueExchanges.length === 0 && <li>No exchanges available.</li>}
+          {uniqueExchanges.map(exchange => (
             <li key={exchange.id}>
               <input
                 type="checkbox"
