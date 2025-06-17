@@ -580,7 +580,7 @@
     "name": "BVOX",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -588,7 +588,7 @@
     "name": "Bynoxdex",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -596,7 +596,7 @@
     "name": "CoinW",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -604,7 +604,7 @@
     "name": "Deepcoin",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -612,7 +612,7 @@
     "name": "Dex-Trade",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -620,7 +620,7 @@
     "name": "DigiFinex",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -628,7 +628,7 @@
     "name": "Hotcoin",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -636,7 +636,7 @@
     "name": "OrangeX",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -644,7 +644,7 @@
     "name": "Ourbit",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -652,7 +652,7 @@
     "name": "PancakeSwap v3 (BSC)",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -660,7 +660,7 @@
     "name": "Pionex",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -668,7 +668,7 @@
     "name": "Toobit",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -676,7 +676,7 @@
     "name": "WEEX",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -684,7 +684,7 @@
     "name": "XT.COM",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
@@ -692,13 +692,15 @@
     "name": "Zoomex",
     "isActive": false,
     "isCoreExchange": false,
-    "connectionType": "undefined",
+    "connectionType": "sinConexion",
     "conexion": false
   },
   {
     "id": "bit2c",
     "name": "Bit2c",
     "isActive": false,
+    "isCoreExchange": false,
+    "connectionType": "sinConexion",
     "conexion": false
   }
 ]

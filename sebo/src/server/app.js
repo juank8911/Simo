@@ -194,7 +194,7 @@ app.get('/api/exchanges-status', getExchangesStatus);
  */
 app.get('/api/exchange-unique/:exchangeId?', getExchangeStatusById);
 
-app.get('/addexchanges',addExchanges());
+app.get('/addexchanges',addExchanges);
 /**
  * @swagger
  * /api/configured-exchanges:

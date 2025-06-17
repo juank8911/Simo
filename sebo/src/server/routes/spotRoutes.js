@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getLastSpotArb } = require('../controllers/spotSocketController');
 const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controllers/spotController');
+const { addExchangesSymbols } = require('../controllers/dbCotroller');
 
 // ...otras rutas...
 
@@ -44,6 +45,9 @@ const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controll
  */
 router.get('/arb', getLastSpotArb);
 // Rutas de Spot (movidas a routes/spotRoutes.js)
+
+
+router.get('/exchange-symbols', addExchangesSymbols);
 /**
  * @swagger
  * /api/spot/spotanalyzer:
