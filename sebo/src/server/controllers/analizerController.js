@@ -84,21 +84,19 @@ const deleteAnalysis = async (req, res) => {
 
  const analyzeSymbols = async (req, res) => {
     try {
-        const symbols = await Symbol.find({});
+        const symbols = await Symbol.find({}, '_id');
         let insertedCount = 0;
 
         for (const symbol of symbols) {
             const exchangeSymbols = await ExchangeSymbol.find({ symbolId: symbol._id });
-            console.log(`Processing symbol: ${symbol.name}, ExchangeSymbols count: ${exchangeSymbols.length}`);
-            if (exchangeSymbols.length > 1) {
-                let minSell = 1000000;
-                let maxBuy = -100000000;
+
+            if (exchangeSymbols.length > 0) {
+                let minSell = Infinity;
+                let maxBuy = -Infinity;
                 let minSellExSyId = null;
                 let maxBuyExSyId = null;
 
                 for (const exSy of exchangeSymbols) {
-<<<<<<< HEAD
-<<<<<<< HEAD
                     // Ensure Val_sell and Val_buy are not null or undefined if that's possible
                     if (exSy.Val_sell != null && exSy.Val_sell < minSell) {
                         minSell = exSy.Val_sell;
@@ -107,30 +105,14 @@ const deleteAnalysis = async (req, res) => {
                     if (exSy.Val_buy != null && exSy.Val_buy > maxBuy) {
                         maxBuy = exSy.Val_buy;
                         maxBuyExSyId = exSy._id;
-=======
-    
-                    if (exSy.Val_sell < minSell) {
-=======
-
-                    if (exSy.Val_sell < minSell && exSy.Val_sell > 0) {
-                        console.log(`MAXl: ${ exSy.Val_sell}------${ minSell}`);
->>>>>>> 680a319 (consultas base de datos v2.0.0)
-                        minSell = exSy.Val_sell;
-                        console.log(`MAXl: ${ exSy.Val_sell}------${ minSell}`);
-
-                        minSellExSyId = exSy.exchangeId;
                     }
-                    if (exSy.Val_buy > maxBuy && exSy.Val_buy > 0) {
-                        maxBuy = exSy.Val_buy;
-                        maxBuyExSyId = exSy.exchangeId
->>>>>>> 6daf91c (consultas base de datos v1.7.5)
-                    }
-                }
-                var promedio = await ((maxBuy - minSell) / minSell) * 100;
+                
+                var promedio = ((maxBuy - minSell) / minSell) * 100;
                 if (isNaN(promedio) || promedio === Infinity) {
                     promedio = 0; // Si el promedio es NaN, lo establecemos a 0
                 }
-<<<<<<< HEAD
+                console.log(`Symbol: ${symbol.name}, Min Sell: ${minSell}, Max Buy: ${maxBuy}, Promedio: ${promedio}`);
+                }
 
                 // Handle cases where minSell is 0 or Infinity to avoid NaN or Infinity in promedio
                 let promedio;
@@ -140,9 +122,6 @@ const deleteAnalysis = async (req, res) => {
                     promedio = ((maxBuy - minSell) / minSell) * 100;
                 }
 
-=======
-                console.log(`Symbol: ${symbol.name}, Min Sell: ${minSell}, Max Buy: ${maxBuy}, Promedio: ${promedio}`);
->>>>>>> 6daf91c (consultas base de datos v1.7.5)
                 const analysis = new Analysis({
                     id_exsyMin: minSellExSyId,
                     id_exsyMax: maxBuyExSyId,
@@ -156,9 +135,9 @@ const deleteAnalysis = async (req, res) => {
                 insertedCount++;
             }
         }
-        console.log(`Total analysis documents inserted: ${insertedCount}`);
-        res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
 
+
+        res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
