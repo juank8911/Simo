@@ -166,7 +166,7 @@ const addExchangesSymbols = async (req, res) => {
         var markets =  ccxtExchange.markets;
         markets = await Object.fromEntries(
           Object.entries(markets).filter(
-            ([_, market]) => market.spot === true
+            ([_, market]) => market.spot === true && market.active === true && market.quote === 'USDT'
          )
         );
         console.log(`aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ${Object.values(markets).slice(0, 2)}`);
