@@ -97,17 +97,24 @@ const deleteAnalysis = async (req, res) => {
                 let maxBuyExSyId = null;
 
                 for (const exSy of exchangeSymbols) {
-                    if (exSy.db_sell < minSell) {
-                        minSell = exSy.db_sell;
+                    // Ensure Val_sell and Val_buy are not null or undefined if that's possible
+                    if (exSy.Val_sell != null && exSy.Val_sell < minSell) {
+                        minSell = exSy.Val_sell;
                         minSellExSyId = exSy._id;
                     }
-                    if (exSy.db_buy > maxBuy) {
-                        maxBuy = exSy.db_buy;
+                    if (exSy.Val_buy != null && exSy.Val_buy > maxBuy) {
+                        maxBuy = exSy.Val_buy;
                         maxBuyExSyId = exSy._id;
                     }
                 }
 
-                const promedio = ((maxBuy - minSell) / minSell) * 100;
+                // Handle cases where minSell is 0 or Infinity to avoid NaN or Infinity in promedio
+                let promedio;
+                if (minSell === 0 || minSell === Infinity || maxBuy === -Infinity || minSellExSyId === null || maxBuyExSyId === null) {
+                    promedio = 0; // Or some other appropriate default or error indicator
+                } else {
+                    promedio = ((maxBuy - minSell) / minSell) * 100;
+                }
 
                 const analysis = new Analysis({
                     id_exsyMin: minSellExSyId,

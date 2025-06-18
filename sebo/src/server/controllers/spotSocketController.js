@@ -1,8 +1,9 @@
-const ccxt = require("ccxt");
-const { readSpotCoinsFileHelper } = require("./spotController");
+// const ccxt = require("ccxt"); // No longer needed here
+// const { readSpotCoinsFileHelper } = require("./spotController"); // No longer needed here
+const { getTopOpportunitiesFromDB } = require('./spotController'); // Added
 let ioInstance = null; // Para guardar la instancia de socket.io
 
-let lastSpotArbData = []; // Guarda el último top 20 emitido
+let lastSpotArbData = []; // Stays as an array, will store data from DB
 // Define the target namespace based on the Python client's URL path
 // WEBSOCKET_URL from Python config: "ws://localhost:3001/api/spot/arb"
 // The path component /api/spot/arb is treated as a Socket.IO namespace.
@@ -15,78 +16,38 @@ async function emitSpotPricesLoop(io) {
 
   // Get a handle to the specific namespace
   const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
+  ioInstance = io;
+  const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
   console.log(
-    `SpotSocketController: Emitting 'spot-arb' data to namespace: ${SPOT_ARB_DATA_NAMESPACE}`
+    `SpotSocketController: Emitting 'spot-arb' data to namespace: ${SPOT_ARB_DATA_NAMESPACE} from DB`
   );
 
   while (true) {
     try {
-      const spotCoinsData = await readSpotCoinsFileHelper();
-      if (!spotCoinsData) {
-        await new Promise((r) => setTimeout(r, 5000));
-        continue;
-      }
-      const top20 = Object.values(spotCoinsData)
-        .sort((a, b) => {
-          const getNum = (v) =>
-            parseFloat((v?.valores?.difer || "0").replace("%", ""));
-          return getNum(b) - getNum(a);
-        })
-        .slice(0, 20);
+      const topOpportunitiesFromDB = await getTopOpportunitiesFromDB(); // Fetches top 20 by default
 
-      let result = [];
-      for (const coin of top20) {
-        const { symbol, exchanges, name } = coin; // Asegúrate de obtener 'name'
-        const prices = [];
-        for (const exId of exchanges) {
-          try {
-            const ex = new ccxt[exId]();
-            await ex.loadMarkets();
-            const ticker = await ex.fetchTicker(symbol);
-            prices.push({ exchange: exId, price: ticker.last }); // Usar 'last' en lugar de 'ask' para consistencia
-          } catch (e) {
-            prices.push({ exchange: exId, price: null });
-          }
-        }
-        // Filtra precios válidos y ordena
-        const validPrices = prices.filter(
-          (p) => typeof p.price === "number" && !isNaN(p.price)
-        );
-        validPrices.sort((a, b) => a.price - b.price);
+      if (topOpportunitiesFromDB && topOpportunitiesFromDB.length > 0) {
+        lastSpotArbData = topOpportunitiesFromDB; // Update lastSpotArbData with the full list
 
-        if (validPrices.length >= 2) {
-          const min = validPrices[0];
-          const max = validPrices[validPrices.length - 1];
-          const percent = ((max.price - min.price) / min.price) * 100;
-          // Imprime en consola
-          console.log(
-            `Moneda: ${symbol} | Min: ${min.exchange} ${min.price} | Max: ${max.exchange} ${max.price} | Diferencia: ${percent.toFixed(2)}%`
-          );
-          // Emite por socket en el formato esperado por la app Python
-          const data = {
-            symbol: symbol,
-            name: name, // Incluir el nombre de la moneda
-            exchanges: validPrices.map((v) => v.exchange),
-            valores: {
-              exValMin: min.exchange,
-              exValMax: max.exchange,
-              valMin: min.price,
-              valMax: max.price,
-              difer: percent.toFixed(2) + "%",
-            },
-          };
-          targetNamespace.emit("spot-arb", data); // Emit to the specific namespace
-          result.push(data);
+        // Emit each opportunity individually
+        // The 'opportunity' object from getTopOpportunitiesFromDB is already in the desired format.
+        for (const opportunity of topOpportunitiesFromDB) {
+          targetNamespace.emit("spot-arb", opportunity);
         }
+        // console.log(`Emitted ${topOpportunitiesFromDB.length} opportunities to ${SPOT_ARB_DATA_NAMESPACE}`);
+      } else {
+        // console.log('No opportunities found in DB to emit.');
+        lastSpotArbData = []; // Clear if nothing found
       }
-      lastSpotArbData = result; // Guarda el último resultado
+
     } catch (err) {
       console.error(
-        `Error in spotSocketController loop (namespace: ${SPOT_ARB_DATA_NAMESPACE}):`,
+        `Error in spotSocketController loop (DB source for namespace: ${SPOT_ARB_DATA_NAMESPACE}):`,
         err
       );
+      lastSpotArbData = []; // Clear on error to avoid serving stale data
     }
-    await new Promise((r) => setTimeout(r, 5000));
+    await new Promise((r) => setTimeout(r, 5000)); // Interval remains 5 seconds
   }
 }
 

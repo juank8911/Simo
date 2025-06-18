@@ -2,7 +2,7 @@
 const ccxt = require('ccxt');
 const fs = require('fs').promises;
 const path = require('path');
-
+const { Analysis, Symbol, ExchangeSymbol, Exchange } = require('../data/dataBase/connectio'); // Added model imports
 
 // Define data directory and file paths
 const DATA_DIR = path.join(__dirname, '..', 'data');
@@ -226,60 +226,91 @@ const handleSpotAnalysisRequest = async (req, res) => {
 };
 
 
-// Helper function to parse 'difer' string to a number for sorting
-const parseDiferToNumber = (diferStr) => {
-    if (typeof diferStr !== 'string') {
-        return Number.NEGATIVE_INFINITY; // Treat malformed/missing 'difer' as lowest priority
+const getTopOpportunitiesFromDB = async (limit = 20) => {
+  try {
+    const opportunities = await Analysis.find({})
+      .sort({ promedio: -1 }) // Sort by 'promedio' descending
+      .limit(limit)
+      .populate({
+        path: 'symbolId',
+        select: 'id_sy name' // Select specific fields from Symbol
+      })
+      .populate({
+        path: 'id_exsyMin',
+        select: 'Val_sell exchangeId', // Val_sell here is the minimum selling price for the opportunity
+        populate: {
+          path: 'exchangeId',
+          select: 'id_ex name' // Select specific fields from Exchange
+        }
+      })
+      .populate({
+        path: 'id_exsyMax',
+        select: 'Val_buy exchangeId', // Val_buy here is the maximum buying price for the opportunity
+        populate: {
+          path: 'exchangeId',
+          select: 'id_ex name' // Select specific fields from Exchange
+        }
+      })
+      .exec();
+
+    if (!opportunities) {
+      return [];
     }
-    if (diferStr.toUpperCase() === "INFINITY%") {
-        return Number.POSITIVE_INFINITY;
-    }
-    if (diferStr.toUpperCase() === "NAN%") {
-        return Number.NEGATIVE_INFINITY; // Treat NaN as lowest priority
-    }
-    const value = parseFloat(diferStr.replace('%', ''));
-    return isNaN(value) ? Number.NEGATIVE_INFINITY : value;
+
+    // Transform the data into the desired output structure
+    const formattedOpportunities = opportunities.map(op => {
+      if (!op.symbolId || !op.id_exsyMin || !op.id_exsyMax || !op.id_exsyMin.exchangeId || !op.id_exsyMax.exchangeId) {
+        // console.warn(`Skipping opportunity due to missing populated data: ${op._id}`);
+        return null; // Skip if essential populated data is missing
+      }
+
+      return {
+        symbol: op.symbolId.id_sy,
+        name: op.symbolId.name,
+        // The 'exchanges' array in the old format listed all exchanges where the coin was found.
+        // The Analysis model focuses on the two specific exchanges involved in the arbitrage.
+        // For now, let's list the two involved in the found opportunity.
+        exchanges: [op.id_exsyMin.exchangeId.id_ex, op.id_exsyMax.exchangeId.id_ex].sort(),
+        valores: {
+          exValMin: op.id_exsyMin.exchangeId.id_ex,
+          exValMax: op.id_exsyMax.exchangeId.id_ex,
+          valMin: op.Val_sell, // This is the minSell from analysis (buy price for arbitrageur)
+          valMax: op.Val_buy,   // This is the maxBuy from analysis (sell price for arbitrageur)
+          difer: op.promedio != null ? op.promedio.toFixed(2) + '%' : "N/A"
+        }
+      };
+    }).filter(op => op !== null); // Filter out any nulls from skipped opportunities
+
+    return formattedOpportunities;
+
+  } catch (error) {
+    console.error("Error fetching top opportunities from DB:", error);
+    throw error; // Re-throw the error to be handled by the caller
+  }
 };
 
 const getTopSpotOpportunities = async (req, res) => {
-    try {
-        const spotCoinsData = await readSpotCoinsFileHelper();
+  try {
+    // Call the new function to get data from the database
+    const topOpportunities = await getTopOpportunitiesFromDB(); // Default limit is 20
 
-        // If file not found, is empty, or contains no data (e.g. {}), return an empty array.
-        if (!spotCoinsData || Object.keys(spotCoinsData).length === 0) {
-            return res.status(200).json([]);
-        }
-
-        const allOpportunities = Object.values(spotCoinsData);
-
-        const sortedOpportunities = allOpportunities
-            .map(op => ({
-                ...op,
-                // Ensure 'valores' and 'difer' exist before parsing, assign a numeric value for sorting
-                parsedDifer: (op.valores && typeof op.valores.difer === 'string')
-                    ? parseDiferToNumber(op.valores.difer)
-                    : Number.NEGATIVE_INFINITY
-            }))
-            .sort((a, b) => b.parsedDifer - a.parsedDifer); // Sort descending: highest 'parsedDifer' first
-
-        // Take the top 20 opportunities and remove the temporary 'parsedDifer' field
-        const top20Opportunities = sortedOpportunities.slice(0, 20).map(op => {
-            const { parsedDifer, ...opportunityData } = op;
-            return opportunityData;
-        });
-
-        res.status(200).json(top20Opportunities);
-
-    } catch (error) {
-        console.error("Error in getTopSpotOpportunities:", error);
-        res.status(500).json({
-            message: "Failed to retrieve top spot opportunities due to a server error.",
-            error: error.message // Provide error message for easier debugging
-        });
+    if (!topOpportunities || topOpportunities.length === 0) {
+      return res.status(200).json([]);
     }
+
+    res.status(200).json(topOpportunities);
+
+  } catch (error) {
+    // Log the error on the server
+    console.error("Error in getTopSpotOpportunities (DB):", error);
+    // Send a generic error message to the client
+    res.status(500).json({
+      message: "Failed to retrieve top spot opportunities from the database.",
+      // Optionally, include error.message if it's safe to expose, or a generic error code
+      // error: error.message
+    });
+  }
 };
-
-
 
 const handleSpotExchangePrice = async (req, res) => {
     console.log('Iniciando análisis de mercados spot...');
@@ -377,4 +408,5 @@ module.exports = {
     getTopSpotOpportunities,
     readSpotCoinsFileHelper,
     handleSpotExchangePrice, // <-- asegúrate de exportarla aquí
+    getTopOpportunitiesFromDB, // Added new function
 };
