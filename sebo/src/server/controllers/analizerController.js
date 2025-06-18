@@ -84,31 +84,34 @@ const deleteAnalysis = async (req, res) => {
 
  const analyzeSymbols = async (req, res) => {
     try {
-        const symbols = await Symbol.find({}, '_id');
+        const symbols = await Symbol.find({});
         let insertedCount = 0;
 
         for (const symbol of symbols) {
             const exchangeSymbols = await ExchangeSymbol.find({ symbolId: symbol._id });
-
-            if (exchangeSymbols.length > 0) {
-                let minSell = Infinity;
-                let maxBuy = -Infinity;
+            console
+            if (exchangeSymbols.length > 1) {
+                let minSell = 100000000;
+                let maxBuy = -100000000;
                 let minSellExSyId = null;
                 let maxBuyExSyId = null;
 
                 for (const exSy of exchangeSymbols) {
-                    if (exSy.db_sell < minSell) {
-                        minSell = exSy.db_sell;
-                        minSellExSyId = exSy._id;
+    
+                    if (exSy.Val_sell < minSell) {
+                        minSell = exSy.Val_sell;
+                        minSellExSyId = exSy.exchangeId;
                     }
-                    if (exSy.db_buy > maxBuy) {
-                        maxBuy = exSy.db_buy;
-                        maxBuyExSyId = exSy._id;
+                    if (exSy.Val_buy > maxBuy) {
+                        maxBuy = exSy.Val_buy;
+                        maxBuyExSyId = exSy.exchangeId
                     }
+                
+                var promedio = ((maxBuy - minSell) / minSell) * 100;
+                if (isNaN(promedio) || promedio === Infinity) {
+                    promedio = 0; // Si el promedio es NaN, lo establecemos a 0
                 }
-
-                const promedio = ((maxBuy - minSell) / minSell) * 100;
-
+                console.log(`Symbol: ${symbol.name}, Min Sell: ${minSell}, Max Buy: ${maxBuy}, Promedio: ${promedio}`);
                 const analysis = new Analysis({
                     id_exsyMin: minSellExSyId,
                     id_exsyMax: maxBuyExSyId,
