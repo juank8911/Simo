@@ -43,6 +43,8 @@ const initializeExchange = (exchangeId) => {
     }
 };
 
+
+
 // Helper to ensure data directory exists
 const ensureDataDirExists = async () => {
     try {
