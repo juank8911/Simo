@@ -8,7 +8,10 @@ const analysisSchema = new mongoose.Schema({
   promedio: { type: Number, default: 0 },
   symbolId: { type: mongoose.Schema.Types.ObjectId, ref: 'Symbol', required: true },
   timestamp: { type: Date, default: Date.now }
+}, {
+  collection: 'analysis' // Especifica explícitamente el nombre de la colección
 });
+
 
 const Analysis = mongoose.model('Analysis', analysisSchema);
 
