@@ -89,25 +89,28 @@ const deleteAnalysis = async (req, res) => {
 
         for (const symbol of symbols) {
             const exchangeSymbols = await ExchangeSymbol.find({ symbolId: symbol._id });
-            console
+            console.log(`Processing symbol: ${symbol.name}, ExchangeSymbols count: ${exchangeSymbols.length}`);
             if (exchangeSymbols.length > 1) {
-                let minSell = 100000000;
+                let minSell = 1000000;
                 let maxBuy = -100000000;
                 let minSellExSyId = null;
                 let maxBuyExSyId = null;
 
                 for (const exSy of exchangeSymbols) {
-    
-                    if (exSy.Val_sell < minSell) {
+
+                    if (exSy.Val_sell < minSell && exSy.Val_sell > 0) {
+                        console.log(`MAXl: ${ exSy.Val_sell}------${ minSell}`);
                         minSell = exSy.Val_sell;
+                        console.log(`MAXl: ${ exSy.Val_sell}------${ minSell}`);
+
                         minSellExSyId = exSy.exchangeId;
                     }
-                    if (exSy.Val_buy > maxBuy) {
+                    if (exSy.Val_buy > maxBuy && exSy.Val_buy > 0) {
                         maxBuy = exSy.Val_buy;
                         maxBuyExSyId = exSy.exchangeId
                     }
                 }
-                var promedio = ((maxBuy - minSell) / minSell) * 100;
+                var promedio = await ((maxBuy - minSell) / minSell) * 100;
                 if (isNaN(promedio) || promedio === Infinity) {
                     promedio = 0; // Si el promedio es NaN, lo establecemos a 0
                 }
@@ -125,9 +128,9 @@ const deleteAnalysis = async (req, res) => {
                 insertedCount++;
             }
         }
-    
+        console.log(`Total analysis documents inserted: ${insertedCount}`);
         res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
-        
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
