@@ -113,13 +113,16 @@ const addExchangesSymbols = async (req, res) => {
       ya que ExchangeSymbol.exchangeId referencia a Exchange._id.
     */
     // Primero, obtenemos todos los _id de Exchange que ya están en ExchangeSymbol
-    const existingExchangeObjectIdsInSymbols = await ExchangeSymbol.distinct('exchangeId');
+    const usedExchangeId  = await ExchangeSymbol.distinct('exchangeId');
+    const  existingExchangeObjectIdsInSymbols = await usedExchangeId.map(es => es.exchangeId);
 
+    // Populate para obtener el id_ex del Exchange
+    console.log(`Found ${Object.values(existingExchangeObjectIdsInSymbols).slice(0, 2)}  ...  existing ExchangeSymbol entries.`);
     // Luego, buscamos Exchanges que cumplan las condiciones y cuyo _id NO esté en la lista obtenida
     const activeExchanges = await Exchange.find({
       isActive: true,
       connectionType: 'ccxt',
-      _id: { $nin: existingExchangeObjectIdsInSymbols } // $nin significa "not in"
+      _id : { $nin: existingExchangeObjectIdsInSymbols } // $nin significa "not in"
     });
 
     if (activeExchanges.length === 0) {
@@ -134,6 +137,7 @@ const addExchangesSymbols = async (req, res) => {
     console.log(`Found ${activeExchanges.length} active CCXT exchanges.`);
     for (const exchange of activeExchanges) {
       const exchangeId = exchange.id_ex;
+      console.log(`Processing exchange: ${exchangeId}`);
       try {
         // 2. Obtener los símbolos de cada exchange activo desde ccxt
         const ccxtExchange = new ccxt[exchangeId]({
@@ -141,6 +145,7 @@ const addExchangesSymbols = async (req, res) => {
           'enableRateLimit': true,
         });
         await ccxtExchange.loadMarkets();
+        
 
         // Obtener todos los tickers para el exchange de una vez para eficiencia
         let allTickers = {};
@@ -149,16 +154,31 @@ const addExchangesSymbols = async (req, res) => {
         } catch (fetchTickersError) {
           console.error(`Error fetching all tickers for exchange ${exchangeId}: ${fetchTickersError.message}. Proceeding without live prices for this exchange.`);
           // Si fetchTickers falla, allTickers permanecerá vacío, y los symbols no tendrán precios actuales.
+          continue; // Skip to the next exchange
         }
+        /**cra un cosole log para ver el contenido de ccxtExchange.markets mustra 2 elemetos y mostrr el coetido de y has una pausa de 5 segundos
+         * 
+         */        
+    
+      
+        // Pause for 5 seconds
 
-        const markets = ccxtExchange.markets;
+        var markets =  ccxtExchange.markets;
+        markets = await Object.fromEntries(
+          Object.entries(markets).filter(
+            ([_, market]) => market.spot === true
+         )
+        );
+        console.log(`aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ${Object.values(markets).slice(0, 2)}`);
         if (!markets || Object.keys(markets).length === 0) {
           console.warn(`No markets found for exchange ${exchangeId}. Skipping...`);
           continue; // Skip to the next exchange
         }
         // 3. y 4. Procesar cada símbolo del exchange
         console.log(`Processing exchange: ${exchangeId} with ${Object.keys(markets).length} markets`);
+        simbolos = 0;
         for (const symbol in markets) {
+          console.log(`${simbolos} / ${Object.keys(markets).length}`);
           const market = markets[symbol];
           // Only process spot markets with USDT quote
           if (market.spot && market.active && market.quote === 'USDT') {
@@ -172,6 +192,7 @@ const addExchangesSymbols = async (req, res) => {
                   name: market.base,
                 });
                 await symbolDoc.save();
+                // console.log(`${market.symbol} - ok s`);
               }
 
               // Check if the ExchangeSymbol combination already exists
@@ -188,6 +209,7 @@ const addExchangesSymbols = async (req, res) => {
                 } catch (tickerError) {
                   console.warn(`Could not fetch ticker for ${market.symbol} on ${exchangeId}: ${tickerError.message}`);
                   // Continue without ticker data, Val_buy and Val_sell will be default 0
+                  continue
                 }
                 // console.log(`Adding new ExchangeSymbol for ${ticker.bid} on ${exchangeId}`);
                 exchangeSymbolDoc = new ExchangeSymbol({
@@ -198,23 +220,10 @@ const addExchangesSymbols = async (req, res) => {
                   timestamp: new Date(),
                 });
                 await exchangeSymbolDoc.save();
+                // console.log(`${ticker.bid} - ok es`);
                 addedCount++;
-              } else {
-                // If exists, optionally update values and timestamp
-                let ticker = null;
-                try {
-                  ticker = await ccxtExchange.fetchTicker(market.symbol);
-                } catch (tickerError) {
-                  console.warn(`Could not fetch ticker for ${market.symbol} on ${exchangeId} for update: ${tickerError.message}`);
-                }
-
-                if (ticker) {
-                  exchangeSymbolDoc.Val_buy = ticker.bid;
-                  exchangeSymbolDoc.Val_sell = ticker.ask;
-                  exchangeSymbolDoc.timestamp = new Date();
-                  await exchangeSymbolDoc.save();
-                }
-              }
+                
+              } 
             } catch (symbolProcessingError) {
               symbolErrors.push({
                 exchangeId: exchangeId,
@@ -222,8 +231,10 @@ const addExchangesSymbols = async (req, res) => {
                 error: symbolProcessingError.message,
               });
               console.error(`Error processing symbol ${market.symbol} on ${exchangeId}:`, symbolProcessingError);
+              continue; // Continue to the next symbol if there's an error
             }
           }
+          simbolos++;
         }
       } catch (exchangeError) {
         failedExchangeCount++;
@@ -235,7 +246,7 @@ const addExchangesSymbols = async (req, res) => {
         });
       }
     }
-
+    console.log(`Finished processing exchanges. Added/Updated ${addedCount} ExchangeSymbol entries.`);
     res.status(200).json({
       message: `Processed active CCXT exchanges. Added/Updated ${addedCount} ExchangeSymbol entries.`,
       failedExchangeCount: failedExchangeCount,
@@ -256,9 +267,77 @@ const addExchangesSymbols = async (req, res) => {
 };
 
 /**
- * crea el metodo para obtener todos exchangeSymbol de un simbolo en especifico de la base de datos
- * y devolverlos en un formato que pueda ser utilizado  por la api
+ * metodo para eliminar los exchangeSymbol que cumplan las siguientes condiciones
+ * delete document  from  exchanSymbol where symbolid = symbol,_id count(exchangeId) < 2clos exchangeSymbol que no tengan de 2 exchanges en adelante
+ * recorrer la coleccion de symbols y buscar y eliminar de la coleccion de exchangeSymbol los que cumplan las condiciones
+ *
+ */const deleteLowCountExchangeSymbols = async (req, res) => {
+  let deletedCount = 0;
+  const symbolsProcessed = [];
+  const errors = [];
+
+  try {
+    // 1. Obtener todos los símbolos
+    const symbols = await Symbol.find({}, '_id id_sy');
+
+    console.log(`Found ${symbols.length} symbols to check.`);
+
+    for (const symbol of symbols) {
+      symbolsProcessed.push(symbol.id_sy);
+      try {
+        // 2. Contar cuántos ExchangeSymbols existen para este símbolo
+        const count = await ExchangeSymbol.countDocuments({ symbolId: symbol._id });
+
+        // 3. Si el count es menor que 2, eliminar todos los ExchangeSymbols para este símbolo
+        if (count < 2) {
+          const deleteResult = await ExchangeSymbol.deleteMany({ symbolId: symbol._id });
+          deletedCount += deleteResult.deletedCount;
+          console.log(`Deleted ${deleteResult.deletedCount} ExchangeSymbol entries for symbol ${symbol.id_sy} (count: ${count}).`);
+        } else {
+          // console.log(`Symbol ${symbol.id_sy} has ${count} ExchangeSymbol entries. Keeping.`);
+        }
+      } catch (symbolError) {
+        errors.push({
+          symbolId: symbol._id,
+          symbol: symbol.id_sy,
+          error: symbolError.message,
+        });
+        console.error(`Error processing symbol ${symbol.id_sy} for deletion check:`, symbolError);
+      }
+    }
+    /**celimina el simbolo  */
+    console.log(`Finished deleting low count ExchangeSymbols. Total deleted: ${deletedCount}`);
+
+    res.status(200).json({
+      message: `Checked ${symbols.length} symbols. Deleted ${deletedCount} ExchangeSymbol entries where count was less than 2.`,
+      symbolsProcessed: symbolsProcessed,
+      errors: errors,
+    });
+
+  } catch (error) {
+    console.error("Critical error in deleteLowCountExchangeSymbols:", error);
+    res.status(500).json({
+      message: "An error occurred while deleting low count exchange symbols.",
+      error: error.message,
+      symbolsProcessed: symbolsProcessed,
+      errors: errors,
+    });  }
+};
+
+/**
+ * crea el metodo para obtener todos los exchangeSymbol de un symbolo
+ * @param {Object} req - Request object
+ * @param {Object} res - Response object
+ * @param {string} req.params.symbolId - The ID of the symbol to fetch exchange symbols for.
+ * res.status(200).json(exchangeSymbols);
+ * res.status(500).json({ message: "Error fetching exchange symbols", error: error.message });
  */
+
+
+
+
+
+
 const getAllExchangeSymbols = async (req, res) => {
   try {
     const { symbolId } = req.params;

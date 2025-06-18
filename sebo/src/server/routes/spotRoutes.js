@@ -3,6 +3,7 @@ const router = express.Router();
 const { getLastSpotArb } = require('../controllers/spotSocketController');
 const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controllers/spotController');
 const { addExchangesSymbols } = require('../controllers/dbCotroller');
+const {analyzeSymbols} = require('../controllers/analizerController');
 
 // ...otras rutas...
 
@@ -47,7 +48,98 @@ router.get('/arb', getLastSpotArb);
 // Rutas de Spot (movidas a routes/spotRoutes.js)
 
 
+/**
+ * @swagger
+ * /api/spot/analysis:
+ *   get:
+ *     summary: Analiza oportunidades spot entre exchanges activos.
+ *     tags:
+ *       - Spot
+ *     responses:
+ *       200:
+ *         description: Análisis de oportunidades spot realizado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *       500:
+ *         description: Error durante el análisis de oportunidades spot.
+ */
+router.get('/analysis', handleSpotAnalysisRequest);
+
+/**
+ * @swagger
+ * /api/spot/exchange-price:
+ *   get:
+ *     summary: Obtiene los precios de compra y venta de cada exchange para cada símbolo spot.
+ *     tags:
+ *       - Spot
+ *     responses:
+ *       200:
+ *         description: Precios de compra y venta por exchange agregados correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 totalSymbols:
+ *                   type: integer
+ *       500:
+ *         description: Error crítico durante el análisis de spot.
+ */
+router.get('/exchange-price', handleSpotExchangePrice);
+
+/**
+ * @swagger
+ * /api/spot/exchange-symbols:
+ *   get:
+ *     summary: Agrega los símbolos de los exchanges activos a la base de datos.
+ *     tags:
+ *       - Spot
+ *     responses:
+ *       200:
+ *         description: Símbolos agregados correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al agregar símbolos de exchanges.
+ */
 router.get('/exchange-symbols', addExchangesSymbols);
+
+/**
+ * @swagger
+ * /api/spot/promedios:
+ *   get:
+ *     summary: Analiza los promedios de los símbolos spot entre exchanges.
+ *     tags:
+ *       - Spot
+ *     responses:
+ *       200:
+ *         description: Análisis de promedios realizado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error durante el análisis de promedios.
+ */
+router.get('/promedios', analyzeSymbols);
+
 /**
  * @swagger
  * /api/spot/spotanalyzer:
@@ -60,9 +152,9 @@ router.get('/exchange-symbols', addExchangesSymbols);
  *       '500':
  *         description: Error durante el análisis de spot.
  */
-router.get('/analysis', handleSpotAnalysisRequest);
 
-router.get('/exchange-price', handleSpotExchangePrice);
+
+
 
 
 module.exports = router;

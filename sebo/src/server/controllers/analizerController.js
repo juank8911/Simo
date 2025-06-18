@@ -19,14 +19,15 @@
      symbolId: { type: mongoose.Schema.Types.ObjectId, ref: 'Symbol', required: true },
      timestamp: { type: Date, default: Date.now }
  *  retorna la cantidad de documentos insertados
- */const Analysis = require('../models/analysis.model');
-const ExchangeSymbol = require('../models/exchangeSymbol.model');
-const Symbol = require('../models/symbol.model');
+ */
+const Analysis = require('../data/dataBase/modelosBD/analysis.model')
+const ExchangeSymbol = require('../data/dataBase/modelosBD/exchangeSymbol.model');
+const Symbol = require('../data/dataBase/modelosBD/symbol.model');
 
 /**
  * crea el crud para el modelo de analisis.model.js
  */
-exports.createAnalysis = async (req, res) => {
+const createAnalysis = async (req, res) => {
     try {
         const analysis = new Analysis(req.body);
         await analysis.save();
@@ -36,7 +37,7 @@ exports.createAnalysis = async (req, res) => {
     }
 };
 
-exports.getAllAnalysis = async (req, res) => {
+const getAllAnalysis = async (req, res) => {
     try {
         const analysis = await Analysis.find().populate('id_exsyMin').populate('id_exsyMax').populate('symbolId');
         res.status(200).json(analysis);
@@ -45,7 +46,7 @@ exports.getAllAnalysis = async (req, res) => {
     }
 };
 
-exports.getAnalysisById = async (req, res) => {
+const getAnalysisById = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id).populate('id_exsyMin').populate('id_exsyMax').populate('symbolId');
         if (!analysis) {
@@ -57,7 +58,7 @@ exports.getAnalysisById = async (req, res) => {
     }
 };
 
-exports.updateAnalysis = async (req, res) => {
+const updateAnalysis = async (req, res) => {
     try {
         const analysis = await Analysis.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!analysis) {
@@ -69,7 +70,7 @@ exports.updateAnalysis = async (req, res) => {
     }
 };
 
-exports.deleteAnalysis = async (req, res) => {
+const deleteAnalysis = async (req, res) => {
     try {
         const analysis = await Analysis.findByIdAndDelete(req.params.id);
         if (!analysis) {
@@ -81,7 +82,7 @@ exports.deleteAnalysis = async (req, res) => {
     }
 };
 
-exports.analyzeSymbols = async (req, res) => {
+ const analyzeSymbols = async (req, res) => {
     try {
         const symbols = await Symbol.find({}, '_id');
         let insertedCount = 0;
