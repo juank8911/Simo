@@ -350,10 +350,9 @@ app.use('/api/spot', spotRoutes);
 
 
 // Iniciar el servidor
-const server = http.createServer(app);
-server.listen(PORT, () => {
+serveri.listen(PORT, () => {
     console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
     console.log(`Documentación Swagger disponible en http://localhost:${PORT}/api-docs`);
     console.log('Accede al frontend en http://localhost:3000');
-    // emitSpotPricesLoop(io);
+    emitSpotPricesLoop(io);
 });

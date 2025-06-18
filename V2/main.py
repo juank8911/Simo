@@ -1,11 +1,12 @@
 # main.py
 
 import asyncio
-import websockets
+import websockets # Ensure this is imported for the UI server
+# import websockets.uri # This should remain commented or removed
+import socketio # Ensure this is imported
 import json
 import ccxt.async_support as ccxt
 import aiohttp
-import websockets.uri # Importar websockets.uri para parsear URLs
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE
 from model import ArbitrageModel
 
@@ -13,12 +14,41 @@ class CryptoArbitrageApp:
     def __init__(self):
         self.exchanges = {}
         self.model = ArbitrageModel()
+        self.sio = socketio.AsyncClient(logger=True, engineio_logger=True)
+        self.ui_clients = set() # Added for managing UI WebSocket clients
+        self._register_sio_handlers()
         self.load_exchanges()
         # Cargar el modelo de IA si ya está entrenado
         try:
             self.model.load_model()
         except FileNotFoundError:
             print("Modelo de IA no encontrado. Por favor, entrene el modelo primero.")
+
+    def _register_sio_handlers(self):
+        @self.sio.event
+        async def connect():
+            print("Socket.IO connected to Sebo")
+            # No need to emit 'join_room' unless Sebo server expects it for namespaces
+
+        @self.sio.event
+        async def disconnect():
+            print("Socket.IO disconnected from Sebo")
+
+        # Register the instance method directly for the 'spot-arb' event
+        self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
+
+    async def on_spot_arb_data_method(self, data):
+        print(f"Datos recibidos de Sebo (spot-arb): {data}")
+        processed_data = await self.process_arb_data(data)
+        print(f"Datos procesados: {processed_data}")
+
+        # Broadcast the processed_data to UI clients
+        if processed_data: # Only broadcast if there's something to send
+            await self.broadcast_to_ui({"type": "arbitrage_update", "payload": processed_data})
+
+        await self.analyze_and_act(processed_data)
+        # If analyze_and_act also has UI-specific messages (e.g., "trade executed"),
+        # it can call self.broadcast_to_ui as well.
 
     def load_exchanges(self):
         # Inicializar los exchanges de CCXT
@@ -110,25 +140,23 @@ class CryptoArbitrageApp:
         return processed_data
 
     async def connect_and_process(self):
-        uri = WEBSOCKET_URL
-        async with websockets.connect(uri) as websocket:
-            print(f"Conectado al WebSocket: {uri}")
-            try:
-                async for message in websocket:
-                    data = json.loads(message)
-                    print(f"Datos recibidos: {data}")
-                    
-                    # Procesar los datos recibidos
-                    processed_data = await self.process_arb_data(data)
-                    print(f"Datos procesados: {processed_data}")
-                    
-                    # Aquí se integraría la lógica de IA y trading
-                    await self.analyze_and_act(processed_data)
+        # WEBSOCKET_URL is "ws://localhost:3000/api/spot/arb"
+        # For python-socketio, the main URL is ws://localhost:3000
+        # The namespace is /api/spot/arb
+        sebo_url = "ws://localhost:3000" # Base URL for Socket.IO connection
+        try:
+            # The handlers are already registered in __init__ via _register_sio_handlers
+            await self.sio.connect(sebo_url, namespaces=['/api/spot/arb'])
+            await self.sio.wait() # Keep the client running and listening for events
 
-            except websockets.exceptions.ConnectionClosedOK:
-                print("Conexión WebSocket cerrada limpiamente.")
-            except Exception as e:
-                print(f"Error en la conexión WebSocket: {e}")
+        except socketio.exceptions.ConnectionError as e:
+            print(f"Error de conexión Socket.IO con Sebo: {e}")
+        except Exception as e: # Catch other potential exceptions
+            print(f"Error en la conexión Socket.IO con Sebo: {e}")
+        finally:
+            if self.sio.connected:
+                print("Desconectando Socket.IO...")
+                await self.sio.disconnect()
 
     async def analyze_and_act(self, processed_data):
         for item in processed_data:
@@ -291,43 +319,70 @@ class CryptoArbitrageApp:
         except Exception as e:
             print(f"Error al solicitar top opportunities: {e}")
 
+    async def broadcast_to_ui(self, message_data):
+        if not self.ui_clients:
+            # print("No UI clients connected, not broadcasting.") # Optional log
+            return
+
+        # print(f"Broadcasting to {len(self.ui_clients)} UI client(s): {message_data}") # Can be noisy
+        message_json = json.dumps(message_data)
+
+        disconnected_clients = set()
+        for client in self.ui_clients:
+            try:
+                await client.send(message_json)
+            except websockets.exceptions.ConnectionClosed:
+                print("Failed to send to a UI client, connection closed.")
+                disconnected_clients.add(client)
+            except Exception as e:
+                print(f"Error sending to UI client: {e}")
+                disconnected_clients.add(client)
+
+        for client in disconnected_clients:
+            self.ui_clients.discard(client) # Use discard to avoid KeyError if already removed
+
     async def start_ui_websocket_server(self):
         # Extraer el puerto de UI_WEBSOCKET_URL (ej. ws://localhost:3001/api/ui -> 3001)
         try:
-            # Parsear la URL para obtener el puerto
-            parsed_url = websockets.uri.parse_uri(UI_WEBSOCKET_URL)
-            ui_port = parsed_url.port
-            if ui_port is None:
-                ui_port = 3001 # Puerto por defecto para el servidor UI si no está en la URL
-        except Exception as e:
-            print(f"Error al parsear UI_WEBSOCKET_URL: {e}. Usando puerto por defecto 3001.")
+            # Example: "ws://localhost:3031/api/spot/ui" -> 3031
+            ui_port = int(UI_WEBSOCKET_URL.split(":")[-1].split("/")[0])
+        except ValueError:
+            print(f"Error al parsear puerto de UI_WEBSOCKET_URL: '{UI_WEBSOCKET_URL}'. Usando puerto por defecto 3001.")
+            ui_port = 3001
+        except Exception as e: # Catch other potential parsing errors
+            print(f"Error inesperado al parsear UI_WEBSOCKET_URL ('{UI_WEBSOCKET_URL}'): {e}. Usando puerto por defecto 3001.")
             ui_port = 3001
 
-        async def handler(websocket):
-            print("Cliente UI conectado.")
+        async def ui_websocket_handler(websocket_client, path):
+            print(f"Cliente UI conectado (path: {path})")
+            self.ui_clients.add(websocket_client)
             try:
-                while True:
-                    # Aquí enviarías los datos procesados a la UI
-                    # Por ejemplo, cada cierto tiempo o cuando haya nuevas oportunidades
-                    # await websocket.send(json.dumps({"status": "running", "data": "some_data"}))
-                    await asyncio.sleep(5) # Envía datos cada 5 segundos (ejemplo)
-            except websockets.exceptions.ConnectionClosedOK:
-                print("Cliente UI desconectado limpiamente.")
+                # Keep connection alive and handle incoming messages if any
+                async for message in websocket_client:
+                    # Process messages from UI if needed
+                    print(f"Received message from UI client: {message}")
+                    # Example: await self.handle_ui_message(message)
+                    pass
+            except websockets.exceptions.ConnectionClosed:
+                print("Cliente UI desconectado.")
             except Exception as e:
-                print(f"Error en el servidor WebSocket de UI: {e}")
+                print(f"Error en el handler del WebSocket de UI: {e}")
+            finally:
+                self.ui_clients.discard(websocket_client) # Use discard
 
         print(f"Iniciando servidor WebSocket para UI en ws://localhost:{ui_port}")
-        # Iniciar el servidor WebSocket en el puerto extraído o por defecto
-        await websockets.serve(handler, "localhost", ui_port)
+        # This relies on `import websockets` being active at the top of the file.
+        # websockets.serve returns a Server object which can be awaited to keep it running,
+        # but asyncio.gather will manage its task.
+        await websockets.serve(ui_websocket_handler, "localhost", ui_port)
 
 async def main(): 
     app = CryptoArbitrageApp()
     
-    # Iniciar el cliente WebSocket para consumir datos de arbitraje
-    # y el servidor WebSocket para la UI en paralelo 
+    # Iniciar el cliente Socket.IO para Sebo y el servidor WebSocket para la UI en paralelo.
     await asyncio.gather(
-        app.connect_and_process(),
-        app.start_ui_websocket_server()
+        app.connect_and_process(),      # Socket.IO client for Sebo
+        app.start_ui_websocket_server() # websockets server for UI
     )
 
 if __name__ == "__main__":
