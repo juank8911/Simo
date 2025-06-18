@@ -106,7 +106,7 @@ const deleteAnalysis = async (req, res) => {
                         maxBuy = exSy.Val_buy;
                         maxBuyExSyId = exSy.exchangeId
                     }
-                
+                }
                 var promedio = ((maxBuy - minSell) / minSell) * 100;
                 if (isNaN(promedio) || promedio === Infinity) {
                     promedio = 0; // Si el promedio es NaN, lo establecemos a 0
@@ -125,8 +125,9 @@ const deleteAnalysis = async (req, res) => {
                 insertedCount++;
             }
         }
-
+    
         res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
+        
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
