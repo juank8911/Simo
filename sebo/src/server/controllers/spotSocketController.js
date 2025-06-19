@@ -1,6 +1,7 @@
 // const ccxt = require("ccxt"); // No longer needed here
 // const { readSpotCoinsFileHelper } = require("./spotController"); // No longer needed here
-const { getTopOpportunitiesFromDB } = require('./spotController'); // Added
+// const { getTopOpportunitiesFromDB } = require('./spotController'); // Removed
+const { getFormattedTopAnalysis } = require('./analizerController'); // Added
 let ioInstance = null; // Para guardar la instancia de socket.io
 
 let lastSpotArbData = []; // Stays as an array, will store data from DB
@@ -17,35 +18,36 @@ async function emitSpotPricesLoop(io) {
   // Get a handle to the specific namespace
   const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
   ioInstance = io;
- 
+  const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
   console.log(
-    `SpotSocketController: Emitting 'spot-arb' data to namespace: ${SPOT_ARB_DATA_NAMESPACE} from DB`
+    `SpotSocketController: Emitting 'spot-arb' data to namespace: ${SPOT_ARB_DATA_NAMESPACE} (from DB via AnalizerController)`
   );
 
   while (true) {
     try {
-      const topOpportunitiesFromDB = await getTopOpportunitiesFromDB(); // Fetches top 20 by default
+      // Call the new function from analizerController.js
+      const detailedOpportunities = await getFormattedTopAnalysis();
 
-      if (topOpportunitiesFromDB && topOpportunitiesFromDB.length > 0) {
-        lastSpotArbData = topOpportunitiesFromDB; // Update lastSpotArbData with the full list
+      if (detailedOpportunities && detailedOpportunities.length > 0) {
+        lastSpotArbData = detailedOpportunities; // Update lastSpotArbData with the formatted data
 
         // Emit each opportunity individually
-        // The 'opportunity' object from getTopOpportunitiesFromDB is already in the desired format.
-        for (const opportunity of topOpportunitiesFromDB) {
+        // 'opportunity' now has the detailed JSON structure with fees
+        for (const opportunity of detailedOpportunities) {
           targetNamespace.emit("spot-arb", opportunity);
         }
-        // console.log(`Emitted ${topOpportunitiesFromDB.length} opportunities to ${SPOT_ARB_DATA_NAMESPACE}`);
+        // console.log(`Emitted ${detailedOpportunities.length} detailed opportunities to ${SPOT_ARB_DATA_NAMESPACE}`);
       } else {
-        // console.log('No opportunities found in DB to emit.');
-        lastSpotArbData = []; // Clear if nothing found
+        // console.log('No detailed opportunities found in DB to emit.');
+        lastSpotArbData = []; // Clear if no data found
       }
 
     } catch (err) {
       console.error(
-        `Error in spotSocketController loop (DB source for namespace: ${SPOT_ARB_DATA_NAMESPACE}):`,
+        `Error in spotSocketController loop (sourcing from analizerController for namespace: ${SPOT_ARB_DATA_NAMESPACE}):`,
         err
       );
-      lastSpotArbData = []; // Clear on error to avoid serving stale data
+      lastSpotArbData = []; // Clear on error
     }
     await new Promise((r) => setTimeout(r, 5000)); // Interval remains 5 seconds
   }

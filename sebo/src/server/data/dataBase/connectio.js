@@ -56,6 +56,7 @@ const Exchange = require('./modelosBD/exchange.model');
 const Symbol = require('./modelosBD/symbol.model');
 const ExchangeSymbol = require('./modelosBD/exchangeSymbol.model');
 const Analysis = require('./modelosBD/analysis.model');
+const Balance = require('./modelosBD/balance.model'); // Import Balance model
 
 // Exportar la conexión y los modelos
 module.exports = {
@@ -66,5 +67,6 @@ module.exports = {
   Exchange,
   Symbol,
   ExchangeSymbol,
-  Analysis
+  Analysis,
+  Balance // Export Balance model
 };

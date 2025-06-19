@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout/Layout.jsx';
 import ActiveExchangesTable from './components/ActiveExchangesTable/ActiveExchangesTable.jsx';
 import SpotsMenu from './components/SpotsMenu/SpotsMenu.jsx';
+import Top20DetailedPage from './components/Top20DetailedPage/Top20DetailedPage'; // Import new page
 
 function App() {
   const [allExchanges, setAllExchanges] = useState([]);
@@ -84,6 +85,7 @@ function App() {
               )}
             </div>
           } />
+          <Route path="/top20-detailed" element={<Top20DetailedPage />} /> {/* Add new route */}
         </Route>
       </Routes>
     </Router>
