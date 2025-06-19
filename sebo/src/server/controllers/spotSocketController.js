@@ -16,8 +16,7 @@ async function emitSpotPricesLoop(io) {
   ioInstance = io; // Store the main io instance if needed by other parts
 
   // Get a handle to the specific namespace
-  const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
-  ioInstance = io;
+
   const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
   console.log(
     `SpotSocketController: Emitting 'spot-arb' data to namespace: ${SPOT_ARB_DATA_NAMESPACE} (from DB via AnalizerController)`
