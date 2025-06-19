@@ -11,7 +11,7 @@ const Top20DetailedPage = () => {
 
   useEffect(() => {
     // Conectar al namespace específico
-    const socket = aw io(`${SEBO_WEBSOCKET_URL}${NAMESPACE}`, {
+    const socket = io(`${SEBO_WEBSOCKET_URL}${NAMESPACE}`, {
       transports: ['websocket'] // Forzar WebSocket para evitar long-polling si es posible
     });
 
