@@ -1,2 +1,7 @@
 python-socketio[asyncio_client]
 aiohttp>=3.0.0
+scikit-learn>=0.24 # Incluye joblib. Ajustar versión si es necesario.
+# numpy>=1.19 # Si se usa numpy explícitamente
+# pandas>=1.1 # Si se usa pandas explícitamente
+# tensorflow # Si se usa TensorFlow/Keras
+# torch # Si se usa PyTorch
