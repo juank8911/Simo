@@ -13,7 +13,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "ascendex",
@@ -269,7 +269,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "htx",
@@ -309,7 +309,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "kucoin",
@@ -333,7 +333,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "luno",

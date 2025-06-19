@@ -129,7 +129,8 @@ const deleteAnalysis = async (req, res) => {
                 insertedCount++;
             }
         }
-
+        console.log(`Inserted ${insertedCount} analysis documents.`);
+         // Return a success message with the count of inserted documentsS
         res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
     } catch (error) {
         res.status(500).json({ message: error.message });
