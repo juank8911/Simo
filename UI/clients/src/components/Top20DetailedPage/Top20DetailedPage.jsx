@@ -58,36 +58,61 @@ const Top20DetailedPage = () => {
     return <div style={{ color: 'red', padding: '20px' }}>Error: {error}</div>;
   }
 
+  // Estilos básicos para la tabla
+  const tableStyle = { width: '100%', borderCollapse: 'collapse', marginTop: '20px' };
+  const tableHeaderStyle = { border: '1px solid #ddd', padding: '10px', textAlign: 'left', backgroundColor: '#e9ecef', fontWeight: 'bold' };
+  const tableCellStyle = { border: '1px solid #ddd', padding: '10px', textAlign: 'left' };
+  const evenRowStyle = { backgroundColor: '#f8f9fa' };
+  const oddRowStyle = { backgroundColor: '#ffffff' };
+
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>Top 20 Oportunidades de Arbitraje (Detallado)</h1>
       {opportunities.length === 0 ? (
         <p>Esperando datos de oportunidades...</p>
       ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
-          {opportunities.map((op, index) => (
-            <div key={op.analysis_id || index} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '15px', width: '300px', backgroundColor: '#f9f9f9' }}>
-              <h3 style={{ marginTop: '0' }}>{op.symbol} <span style={{ color: '#555', fontSize: '0.9em' }}>({op.symbol_name})</span></h3>
-              <p style={{ color: op.percentage_difference && parseFloat(op.percentage_difference) > 0 ? 'green' : 'red', fontWeight: 'bold' }}>
-                Diferencia: {op.percentage_difference}
-              </p>
-              <p>Timestamp Análisis: {new Date(op.timestamp).toLocaleString()}</p>
-
-              <div>
-                <strong>Comprar en: {op.exchange_min_name} ({op.exchange_min_id})</strong><br/>
-                Precio: {op.price_at_exMin_to_buy_asset} USDT<br/>
-                Taker Fee: {op.fees_exMin?.taker_fee * 100}% | Maker Fee: {op.fees_exMin?.maker_fee * 100}%<br/>
-                Retiro {op.symbol_name}: {op.fees_exMin?.withdrawal_fee_asset} ({op.fees_exMin?.withdrawal_network})
-              </div>
-              <hr style={{margin: '10px 0'}}/>
-              <div>
-                <strong>Vender en: {op.exchange_max_name} ({op.exchange_max_id})</strong><br/>
-                Precio: {op.price_at_exMax_to_sell_asset} USDT<br/>
-                Taker Fee: {op.fees_exMax?.taker_fee * 100}% | Maker Fee: {op.fees_exMax?.maker_fee * 100}%
-              </div>
-            </div>
-          ))}
-        </div>
+        <table style={tableStyle}>
+          <thead>
+            <tr>
+              <th style={tableHeaderStyle}>Símbolo</th>
+              <th style={tableHeaderStyle}>Diferencia (%)</th>
+              <th style={tableHeaderStyle}>Ex. Compra: Fees (T/M)</th>
+              <th style={tableHeaderStyle}>Ex. Venta: Fees (T/M)</th>
+              <th style={tableHeaderStyle}>Retiro Óptimo (Activo desde Ex. Compra)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {opportunities.map((op, index) => (
+              <tr key={op.analysis_id || index} style={index % 2 === 0 ? evenRowStyle : oddRowStyle}>
+                <td style={tableCellStyle}>
+                  {op.symbol} <span style={{color: '#777', fontSize: '0.8em'}}>({op.symbol_name})</span>
+                  <div style={{fontSize: '0.8em', color: '#555'}}>
+                    Compra: {op.exchange_min_name} ({op.price_at_exMin_to_buy_asset?.toFixed(6)} USDT)<br/>
+                    Venta: {op.exchange_max_name} ({op.price_at_exMax_to_sell_asset?.toFixed(6)} USDT)
+                  </div>
+                  <div style={{fontSize: '0.7em', color: '#999'}}>Análisis: {new Date(op.timestamp).toLocaleString()}</div>
+                </td>
+                <td style={{ ...tableCellStyle, color: op.percentage_difference && parseFloat(op.percentage_difference) > 0 ? 'green' : 'red', fontWeight: 'bold' }}>
+                  {op.percentage_difference}
+                </td>
+                <td style={tableCellStyle}>
+                  {/* Exchange: {op.exchange_min_name} ({op.exchange_min_id})<br/> */}
+                  Taker: {op.fees_exMin?.taker_fee != null ? (op.fees_exMin.taker_fee * 100).toFixed(3) + '%' : 'N/A'}<br/>
+                  Maker: {op.fees_exMin?.maker_fee != null ? (op.fees_exMin.maker_fee * 100).toFixed(3) + '%' : 'N/A'}
+                </td>
+                <td style={tableCellStyle}>
+                  {/* Exchange: {op.exchange_max_name} ({op.exchange_max_id})<br/> */}
+                  Taker: {op.fees_exMax?.taker_fee != null ? (op.fees_exMax.taker_fee * 100).toFixed(3) + '%' : 'N/A'}<br/>
+                  Maker: {op.fees_exMax?.maker_fee != null ? (op.fees_exMax.maker_fee * 100).toFixed(3) + '%' : 'N/A'}
+                </td>
+                <td style={tableCellStyle}>
+                  Red: {op.fees_exMin?.withdrawal_network || 'N/A'}<br/>
+                  Fee: {op.fees_exMin?.withdrawal_fee_asset != null ? op.fees_exMin.withdrawal_fee_asset : 'N/A'} {op.fees_exMin?.withdrawal_fee_asset != null ? op.symbol_name : ''}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

@@ -70,23 +70,32 @@ exports.updateBalanceById = async (req, res) => {
 exports.updateBalanceByExchange = async (req, res) => {
   try {
     const { exchangeId } = req.params;
-    const { balance_usdt } = req.body;
+    const updateData = { ...req.body, timestamp: new Date() };
 
-    if (balance_usdt == null) {
-        return res.status(400).json({ message: "balance_usdt is required in the body." });
+    // Eliminar id_exchange del cuerpo si viene, ya que está en params y es la clave de búsqueda
+    if (updateData.id_exchange) {
+      delete updateData.id_exchange;
+    }
+    // No permitir que se actualice _id directamente
+    if (updateData._id) {
+        delete updateData._id;
     }
 
     const updatedBalance = await Balance.findOneAndUpdate(
       { id_exchange: exchangeId },
-      { balance_usdt, id_exchange: exchangeId, timestamp: new Date() }, // Asegurar que id_exchange se incluya en el update si es upsert
+      { $set: updateData }, // Usar $set para actualizar solo los campos proporcionados en req.body
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
     res.status(200).json(updatedBalance);
   } catch (error) {
+    // Capturar errores de validación de Mongoose
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: "Validation Error", errors: error.errors });
+    }
+    console.error(`Error upserting balance for ${req.params.exchangeId}:`, error);
     res.status(400).json({ message: "Error upserting balance record for exchange", error: error.message });
   }
 };
-
 
 // Eliminar un registro de balance (por _id de MongoDB)
 exports.deleteBalanceById = async (req, res) => {
