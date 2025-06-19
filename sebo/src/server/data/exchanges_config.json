@@ -2,7 +2,7 @@
   {
     "id": "alpaca",
     "name": "Alpaca",
-    "isActive": false,
+    "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
     "conexion": true
@@ -13,7 +13,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "ascendex",
@@ -197,7 +197,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": true
+    "conexion": false
   },
   {
     "id": "coincatch",
@@ -269,7 +269,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": false
+    "conexion": true
   },
   {
     "id": "htx",
@@ -517,7 +517,7 @@
     "isActive": true,
     "isCoreExchange": true,
     "connectionType": "ccxt",
-    "conexion": true
+    "conexion": false
   },
   {
     "id": "coincheck",

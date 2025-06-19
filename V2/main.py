@@ -37,18 +37,77 @@ class CryptoArbitrageApp:
         # Register the instance method directly for the 'spot-arb' event
         self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
 
-    async def on_spot_arb_data_method(self, data):
-        print(f"Datos recibidos de Sebo (spot-arb): {data}")
-        processed_data = await self.process_arb_data(data)
-        print(f"Datos procesados: {processed_data}")
+    async def on_spot_arb_data_method(self, data): # 'data' es ahora el JSON enriquecido
+        print(f"V2: Datos enriquecidos recibidos de Sebo (spot-arb): {data.get('symbol')} dif: {data.get('percentage_difference')}")
 
-        # Broadcast the processed_data to UI clients
-        if processed_data: # Only broadcast if there's something to send
-            await self.broadcast_to_ui({"type": "arbitrage_update", "payload": processed_data})
+        # 'data' ahora contiene:
+        # analysis_id, symbol, symbol_name, exchange_min_id, exchange_min_name,
+        # exchange_max_id, exchange_max_name, price_at_exMin_to_buy_asset,
+        # price_at_exMax_to_sell_asset, percentage_difference,
+        # fees_exMin: { taker_fee, maker_fee, withdrawal_fee_asset, withdrawal_network },
+        # fees_exMax: { taker_fee, maker_fee },
+        # timestamp
 
-        await self.analyze_and_act(processed_data)
-        # If analyze_and_act also has UI-specific messages (e.g., "trade executed"),
-        # it can call self.broadcast_to_ui as well.
+        # TODO: Lógica para obtener el `txTrOutSell` inicial (retiro de USDT)
+        # Esto implica:
+        # 1. Leer de la colección `Balance` para saber desde qué `id_exchange` retirar USDT.
+        #    (Por ahora, podemos simular esto o V2 necesitará acceso a MongoDB
+        #     o un endpoint de Sebo para leer su propio balance).
+        #    Ejemplo simulado:
+        current_usdt_balance_exchange_id = "binance" # Simulado - V2 debería obtener esto de la BD 'Balance'
+                                                     # o a través de una configuración/API de V2.
+
+        usdt_withdrawal_fees_data = None
+        if current_usdt_balance_exchange_id:
+            try:
+                # El puerto 3000 es donde corre Sebo
+                sebo_api_url = f"http://localhost:3000/api/exchanges/{current_usdt_balance_exchange_id}/withdrawal-fees/USDT"
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(sebo_api_url) as response:
+                        if response.status == 200:
+                            usdt_withdrawal_fees_data = await response.json()
+                            print(f"V2: Comisiones de retiro de USDT desde {current_usdt_balance_exchange_id}: {usdt_withdrawal_fees_data}")
+                            # Aquí, la IA necesitaría seleccionar la red óptima y su fee.
+                        else:
+                            print(f"V2: Error al obtener comisiones de retiro de USDT de Sebo: Status {response.status} - {await response.text()}")
+            except Exception as e:
+                print(f"V2: Excepción al obtener comisiones de retiro de USDT de Sebo: {e}")
+
+        # Ahora 'data' tiene las comisiones de la oportunidad (exMin, exMax)
+        # y 'usdt_withdrawal_fees_data' tiene las opciones para el retiro inicial de USDT.
+        # La IA puede proceder a calcular la rentabilidad neta y tomar decisiones.
+
+        # La llamada a self.process_arb_data y self.analyze_and_act necesitarán ser adaptadas
+        # para usar esta estructura de datos más rica.
+        # Por ahora, solo imprimimos para verificar y se comenta la lógica anterior.
+
+        # print(f"V2: Oportunidad original: {data}") # Puede ser muy verboso
+        # print(f"V2: Comisiones USDT: {usdt_withdrawal_fees_data}") # Ya se imprime arriba
+
+        # Ejemplo de cómo podrías pasar los datos (esto es conceptual para el futuro)
+        # if data and usdt_withdrawal_fees_data:
+        #     # Aquí se necesitaría una nueva función o adaptar las existentes.
+        #     # Por ejemplo, una función que combine 'data' y 'usdt_withdrawal_fees_data'
+        #     # para calcular la rentabilidad neta final.
+        #     # full_opportunity_details = {**data, "usdt_withdrawal_options": usdt_withdrawal_fees_data}
+        #     # await self.evaluate_full_opportunity(full_opportunity_details)
+        #     pass
+
+
+        # Las siguientes líneas deben ser adaptadas o reemplazadas por la nueva lógica de IA
+        # que considera todas las comisiones.
+        # processed_data = await self.process_arb_data(data) # Firma y lógica obsoletas
+        # print(f"Datos procesados (lógica antigua): {processed_data}")
+        # await self.analyze_and_act(processed_data) # Firma y lógica obsoletas
+
+        # Broadcast de los datos enriquecidos (o un resumen) a la UI de V2 si es necesario.
+        # La UI de V2 actualmente no está diseñada para este nivel de detalle, pero podría serlo.
+        # Por ahora, la UI de V2 (localhost:3031) recibe datos de arbitraje básicos de Sebo.
+        # Si V2 tuviera su propia UI que necesitara estos datos enriquecidos, aquí se enviarían.
+        # await self.broadcast_to_ui({"type": "v2_detailed_opportunity_analysis", "payload": data_combinada_con_usdt_fees})
+
+        print(f"V2: Fin del manejo de oportunidad para {data.get('symbol')}. Lógica de procesamiento y acción con comisiones completas pendiente.")
+
 
     def load_exchanges(self):
         # Inicializar los exchanges de CCXT
