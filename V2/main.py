@@ -5,8 +5,7 @@ import websockets
 import json
 import ccxt.async_support as ccxt
 import aiohttp
-import websockets.uri # Importar aiohttp para peticiones HTTP
-from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE
+from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE, EXCHANGE_NAMES
 from model import ArbitrageModel
 
 class CryptoArbitrageApp:
@@ -23,7 +22,7 @@ class CryptoArbitrageApp:
     def load_exchanges(self):
         # Inicializar los exchanges de CCXT
         # Asegúrate de que las claves de API estén configuradas en config.py
-        exchange_names = ["binance", "okx"] # Agrega aquí los exchanges que vayas a usar
+        exchange_names = EXCHANGE_NAMES # Agrega aquí los exchanges que vayas a usar
         for name in exchange_names:
             exchange_class = getattr(ccxt, name)
             self.exchanges[name] = exchange_class({
@@ -160,13 +159,13 @@ class CryptoArbitrageApp:
             if difer_percentage > MIN_PROFIT_PERCENTAGE or (predicted_difer is not None and predicted_difer * 100 > MIN_PROFIT_PERCENTAGE):
                 print(f"Oportunidad de arbitraje para {symbol} con {difer_percentage:.2f}% de diferencia. Analizando...")
                 # Aquí iría la lógica de compra/venta y transferencia
-                await self.execute_arbitrage(symbol, ex_val_min, ex_val_max, val_min, val_max, difer_percentage)
+                await self.simulate_arbitrage_operation(symbol, ex_val_min, ex_val_max, val_min, val_max, difer_percentage)
                 
             else:
                 print(f"Diferencia para {symbol} ({difer_percentage:.2f}%) no es suficiente para arbitraje o la IA no predice ganancia. Buscando nuevas oportunidades...")
                 await self.request_top_opportunities()
 
-    async def execute_arbitrage(self, symbol, buy_exchange_name, sell_exchange_name, buy_price, sell_price, difer_percentage):
+    async def simulate_arbitrage_operation(self, symbol, buy_exchange_name, sell_exchange_name, buy_price, sell_price, difer_percentage):
         print(f"Iniciando operación de arbitraje para {symbol}...")
 
         # Obtener costos de trading (fees) usando CCXT para ambos exchanges
