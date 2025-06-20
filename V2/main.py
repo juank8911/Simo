@@ -506,7 +506,7 @@ class CryptoArbitrageApp:
                 },
             })
 
-    def fetch_spot_prices(self, symbol, exchange_list):
+    async def fetch_spot_prices(self, symbol, exchange_list):
         prices = {}
         tasks = []
         for exchange_name in exchange_list:
@@ -578,26 +578,26 @@ class CryptoArbitrageApp:
                 output_item[ex_name] = price
             
             processed_data.append(output_item)
-            return processed_data
-    
-        async def connect_and_process(self):
-            # WEBSOCKET_URL is "ws://localhost:3000/api/spot/arb"   
-            # For python-socketio, the main URL is ws://localhost:3000
-            # The namespace is /api/spot/arb
-            sebo_url = "ws://localhost:3000" # Base URL for Socket.IO connection
-            try:
-                # The handlers are already registered in __init__ via _register_sio_handlers
-                await self.sio.connect(sebo_url, namespaces=['/api/spot/arb'])
-                await self.sio.wait() # Keep the client running and listening for events
-            except ConnectionError as e:
-                print(f"Error de conexión Socket.IO con Sebo: {e}")
-                print(f"Error de conexión Socket.IO con Sebo: {e}")
-            except Exception as e: # Catch other potential exceptions
-                print(f"Error en la conexión Socket.IO con Sebo: {e}")
-            finally:
-                if self.sio.connected:
-                    print("Desconectando Socket.IO...")
-                    await self.sio.disconnect()
+        return processed_data
+
+    async def connect_and_process(self):
+        # WEBSOCKET_URL is "ws://localhost:3000/api/spot/arb"
+        # For python-socketio, the main URL is ws://localhost:3000
+        # The namespace is /api/spot/arb
+        sebo_url = "ws://localhost:3000" # Base URL for Socket.IO connection
+        try:
+            # The handlers are already registered in __init__ via _register_sio_handlers
+            await self.sio.connect(sebo_url, namespaces=['/api/spot/arb'])
+            await self.sio.wait() # Keep the client running and listening for events
+        except ConnectionError as e:
+            print(f"Error de conexión Socket.IO con Sebo: {e}")
+            print(f"Error de conexión Socket.IO con Sebo: {e}")
+        except Exception as e: # Catch other potential exceptions
+            print(f"Error en la conexión Socket.IO con Sebo: {e}")
+        finally:
+            if self.sio.connected:
+                print("Desconectando Socket.IO...")
+                await self.sio.disconnect()
 
     async def analyze_and_act(self, processed_data):
         for item in processed_data:
