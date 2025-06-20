@@ -27,6 +27,13 @@ const Sidebar = ({ allExchanges, setAllExchanges }) => {
         >
           Conexión
         </button>
+        <button
+          className={styles.menuHeader} // Assuming similar styling is desired
+          style={{ fontWeight: 'bold', textAlign: 'left', width: '100%' }}
+          onClick={() => navigate('/top20-detailed')}
+        >
+          Top 20 Detallado
+        </button>
         <SpotsMenu />
       </div>
     </div>

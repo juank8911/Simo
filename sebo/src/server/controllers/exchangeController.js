@@ -1,12 +1,14 @@
 const ccxt = require('ccxt');
-const { EXCHANGES } = require('../utils/config');
-const fs = require('fs').promises;
-const path = require('path');
+const { EXCHANGES } = require('../utils/config'); // This might be unused if EXCHANGES is only for the old file based config
+// const fs = require('fs').promises; // No longer needed for config
+// const path = require('path'); // No longer needed for config paths
 
-// Define data directory and config file path
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const CONFIG_FILE_PATH = path.join(DATA_DIR, 'exchanges_config.json');
+// Imports for DB access
+const { readExchangeConfig } = require('./spotController');
+const Exchange = require('../data/dataBase/modelosBD/exchange.model');
 
+// DATA_DIR and CONFIG_FILE_PATH are removed as they are no longer used for exchange config.
+// ensureDataDirExists, local readExchangeConfig, and writeExchangeConfig are removed.
 
 // Función para inicializar un exchange con ccxt
 const initializeExchange = (exchangeId) => {
@@ -43,55 +45,8 @@ const initializeExchange = (exchangeId) => {
     }
 };
 
-// Helper to ensure data directory exists
-const ensureDataDirExists = async () => {
-    try {
-        await fs.access(DATA_DIR);
-    } catch (error) {
-        if (error.code === 'ENOENT') { // If directory does not exist
-            try {
-                await fs.mkdir(DATA_DIR, { recursive: true });
-                console.log(`Data directory created: ${DATA_DIR}`);
-            } catch (mkdirError) {
-                console.error(`Error creating data directory ${DATA_DIR}:`, mkdirError);
-                throw mkdirError; // Rethrow to prevent further operations if dir creation fails
-            }
-        } else {
-            console.error(`Error accessing data directory ${DATA_DIR}:`, error);
-            throw error; // Rethrow other access errors
-        }
-    }
-};
-
-// Helper functions for config file
-const readExchangeConfig = async () => {
-    await ensureDataDirExists(); // Ensure directory exists before trying to read
-    try {
-        // Check if the file itself exists
-        await fs.access(CONFIG_FILE_PATH);
-        const data = await fs.readFile(CONFIG_FILE_PATH, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        if (error.code === 'ENOENT') { // If config file does not exist
-            console.warn(`Exchange config file not found at ${CONFIG_FILE_PATH}. A new one will be created on first update.`);
-            return []; // Return empty array, it will be created on first write
-        }
-        // For other errors (e.g., parsing error, permissions), log and return empty
-        console.error('Error reading or parsing exchange config file:', error);
-        return []; // Return empty array to prevent application crash on malformed JSON
-    }
-};
-
-const writeExchangeConfig = async (config) => {
-    await ensureDataDirExists(); // Ensure directory exists before trying to write
-    try {
-        await fs.writeFile(CONFIG_FILE_PATH, JSON.stringify(config, null, 2), 'utf-8');
-    } catch (error) {
-        console.error('Error writing exchange config file:', error);
-    }
-};
-
 // Helper function to get status and price for a single exchange
+// ensureDataDirExists, local readExchangeConfig, and writeExchangeConfig have been removed.
 const getSingleExchangeStatusAndPrice = async (exchangeId, exchangeNameProvided) => { //NOSONAR
     const result = {
         id: exchangeId,
@@ -154,41 +109,48 @@ const getExchangesStatus = async (req, res) => {
 
 // New function to get configured and all ccxt exchanges
 const getConfiguredExchanges = async (req, res) => {
-    try {
-        const ccxtExchangeIds = ccxt.exchanges;
-        let configuredExchanges = await readExchangeConfig();
-        const configuredMap = new Map(configuredExchanges.map(ex => [ex.id, ex]));
+  try {
+    const ccxtExchangeIds = ccxt.exchanges;
+    // Llamar a la función refactorizada que lee de la BD
+    let configuredExchangesFromDB = await readExchangeConfig();
 
-        const finalExchangeList = [];
+    const configuredMap = new Map(configuredExchangesFromDB.map(ex => [ex.id_ex, ex]));
 
-        // Add configured exchanges first, marking if ccxt supports them
-        configuredExchanges.forEach(confEx => {
-            finalExchangeList.push({
-                ...confEx,
-                ccxtSupported: ccxtExchangeIds.includes(confEx.id)
-            });
+    const finalExchangeList = [];
+
+    configuredExchangesFromDB.forEach(confEx => {
+      finalExchangeList.push({
+        id: confEx.id_ex, // Mapear id_ex a id
+        name: confEx.name,
+        isActive: confEx.isActive,
+        isCoreExchange: confEx.isCoreExchange,
+        connectionType: confEx.connectionType,
+        conexion: confEx.conexion, // Este campo viene de la BD? El modelo Exchange lo tiene.
+        ccxtSupported: ccxtExchangeIds.includes(confEx.id_ex)
+      });
+    });
+
+    ccxtExchangeIds.forEach(id_ccxt => {
+      if (!configuredMap.has(id_ccxt)) {
+        finalExchangeList.push({
+          id: id_ccxt,
+          name: id_ccxt.charAt(0).toUpperCase() + id_ccxt.slice(1),
+          isActive: false,
+          isCoreExchange: false,
+          connectionType: 'ccxt',
+          conexion: false,
+          ccxtSupported: true
         });
+      }
+    });
 
-        // Add any ccxt exchanges not already in the configured list
-        ccxtExchangeIds.forEach(id => {
-            if (!configuredMap.has(id)) {
-                finalExchangeList.push({
-                    id: id,
-                    name: id.charAt(0).toUpperCase() + id.slice(1),
-                    isActive: false, // Default to not active if new
-                    ccxtSupported: true
-                });
-            }
-        });
-        
-        // Optional: Sort by name
-        finalExchangeList.sort((a, b) => a.name.localeCompare(b.name));
+    finalExchangeList.sort((a, b) => a.name.localeCompare(b.name));
+    res.json(finalExchangeList);
 
-        res.json(finalExchangeList);
-    } catch (error) {
-        console.error('Error fetching configured exchanges:', error);
-        res.status(500).json({ error: 'Failed to retrieve list of exchanges.' });
-    }
+  } catch (error) {
+    console.error('Error fetching configured exchanges (DB source):', error);
+    res.status(500).json({ error: 'Failed to retrieve list of exchanges.' });
+  }
 };
 
 
@@ -198,86 +160,112 @@ const getConfiguredExchanges = async (req, res) => {
 
 // Endpoint to get status for a single exchange by ID
 const getExchangeStatusById = async (req, res) => {
-    const { exchangeId } = req.params;
-    if (!exchangeId) {
-        return res.status(400).json({ error: 'Exchange ID is required.' });
+  const { exchangeId } = req.params; // Este es el id_ex de CCXT
+  if (!exchangeId) {
+    return res.status(400).json({ error: 'Exchange ID is required.' });
+  }
+
+  try {
+    const allExchangeConfigsFromDB = await readExchangeConfig(); // Usa la función que lee de la BD
+    const exchangeConfig = allExchangeConfigsFromDB.find(ex => ex.id_ex === exchangeId);
+
+    const exchangeName = exchangeConfig ? exchangeConfig.name : (exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1));
+
+    if (!exchangeConfig || exchangeConfig.connectionType !== 'ccxt') {
+      // La función updateExchangeConexionStatus será refactorizada después para usar BD.
+      // El 'await' es previendo que sea async en el futuro.
+      await updateExchangeConexionStatus(exchangeId, false);
+
+      let errorMessage = `Exchange '${exchangeName}' no está configurado para conexión CCXT en la base de datos.`;
+      if (!exchangeConfig) {
+        errorMessage = `Exchange '${exchangeName}' (ID: ${exchangeId}) no encontrado en la base de datos de configuración.`;
+      }
+
+      console.warn(errorMessage);
+      return res.json({
+        id: exchangeId,
+        name: exchangeName,
+        connected: false,
+        error: errorMessage
+      });
     }
 
-    try {
-        const config = await readExchangeConfig();
-        const exchangeConfig = config.find(ex => ex.id === exchangeId);
-        const exchangeName = exchangeConfig ? exchangeConfig.name : (exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1));
+    const status = await getSingleExchangeStatusAndPrice(exchangeId, exchangeName);
 
-        // If the exchange is not CCXT-based or not supported, don't try to connect.
-        // This prevents crashes for manual or unsupported exchanges.
-        if (!exchangeConfig || exchangeConfig.connectionType !== 'ccxt') {
-            updateExchangeConexionStatus(exchangeId, false); // Update connection status
-            console.warn(`Exchange '${exchangeName}' is not configured for CCXT connection.`);
-            return res.json({
-                id: exchangeId,
-                name: exchangeName,
-                connected: false,
-                error: `Exchange '${exchangeName}' is not configured for CCXT connection.`
-            });
-        }
+    await updateExchangeConexionStatus(exchangeId, status.connected);
 
-        const status = await getSingleExchangeStatusAndPrice(exchangeId, exchangeName);
-        updateExchangeConexionStatus(exchangeId, true); // Update connection status
-        // If the exchange is not connected, we can still return the status with an error message
-        res.json(status);
-    } catch (error) {
-        console.error(`Error in getExchangeStatusById for ${exchangeId}:`, error);
-        res.status(500).json({
-            id: exchangeId,
-            name: exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1),
-            connected: false,
-            error: 'An unexpected server error occurred while fetching status.'
-        });
-    }
+    res.json(status);
+
+  } catch (error) {
+    console.error(`Error en getExchangeStatusById para ${exchangeId}:`, error);
+    res.status(500).json({
+      id: exchangeId,
+      name: exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1), // Fallback name
+      connected: false,
+      error: 'Ocurrió un error inesperado en el servidor al obtener el estado.'
+    });
+  }
 };
-
 
 // Endpoint to update the active status of an exchange
 const updateExchangeActiveStatus = async (req, res) => {
-    const { exchangeId, isActive, exchangeName } = req.body;
+  const { exchangeId, isActive, exchangeName } = req.body; // exchangeName es opcional, usado si se crea nuevo
 
-    if (typeof exchangeId === 'undefined' || typeof isActive === 'undefined') {
-        return res.status(400).json({ error: 'exchangeId and isActive are required.' });
+  if (typeof exchangeId === 'undefined' || typeof isActive === 'undefined') {
+    return res.status(400).json({ error: 'exchangeId (id_ex de CCXT) e isActive son requeridos.' });
+  }
+
+  try {
+    const updatedExchange = await Exchange.findOneAndUpdate(
+      { id_ex: exchangeId }, // Condición de búsqueda
+      { $set: { isActive: isActive } }, // Campos a actualizar
+      { new: true, runValidators: true } // Opciones: devolver el nuevo doc, correr validadores del esquema
+    );
+
+    if (!updatedExchange) {
+      return res.status(404).json({
+        error: `Exchange con id '${exchangeId}' no encontrado en la base de datos. No se pudo actualizar estado.`
+      });
     }
 
-    try {
-        let config = await readExchangeConfig();
-        const index = config.findIndex(ex => ex.id === exchangeId);
+    res.json({
+      success: true,
+      message: `Exchange ${exchangeId} active status updated to ${isActive}.`,
+      data: updatedExchange
+    });
 
-        if (index > -1) {
-            config[index].isActive = isActive;
-        } else {
-            // Add new exchange to config if it wasn't there
-            config.push({ id: exchangeId, name: exchangeName || (exchangeId.charAt(0).toUpperCase() + exchangeId.slice(1)), isActive: isActive });
-        }
-
-        await writeExchangeConfig(config);
-        res.json({ success: true, message: `Exchange ${exchangeId} active status updated.` });
-    } catch (error) {
-        console.error('Error updating exchange active status:', error);
-        res.status(500).json({ error: 'Failed to update exchange active status.' });
+  } catch (error) {
+    console.error('Error actualizando el estado activo del exchange en la BD:', error);
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: "Error de validación", errors: error.errors });
     }
+    res.status(500).json({ error: 'Falló la actualización del estado activo del exchange.' });
+  }
 };
 
-// Nueva función para actualizar el campo "conexion"
+// Nueva función para actualizar el campo "conexion" en la BD
 const updateExchangeConexionStatus = async (exchangeId, status) => {
-    let config = await readExchangeConfig();
-    let updated = false;
-    config = config.map(ex => {
-        if (ex.id === exchangeId) {
-            updated = true;
-            return { ...ex, conexion: status };
-        }
-        return ex;
-    });
-    if (updated) {
-        await writeExchangeConfig(config);
+  // exchangeId es el id_ex de CCXT, status es un booleano
+  if (typeof exchangeId === 'undefined' || typeof status === 'undefined') {
+    console.error('V2_updateExchangeConexionStatus: exchangeId y status son requeridos.');
+    return; // No se puede proceder
+  }
+
+  try {
+    const updatedExchange = await Exchange.findOneAndUpdate(
+      { id_ex: exchangeId },
+      { $set: { conexion: status } },
+      { new: true, runValidators: true } // new:true es opcional aquí si no usamos el resultado
+    );
+
+    if (!updatedExchange) {
+      console.warn(`V2_updateExchangeConexionStatus: No se encontró el exchange con id_ex '${exchangeId}' en la BD para actualizar estado de conexión.`);
+    } else {
+      // console.log(`V2_updateExchangeConexionStatus: Estado de conexión para ${exchangeId} actualizado a ${status} en la BD.`);
     }
+  } catch (error) {
+    console.error(`V2_updateExchangeConexionStatus: Error actualizando estado de conexión para ${exchangeId} en la BD:`, error);
+  }
 };
 
 module.exports = {
@@ -286,4 +274,93 @@ module.exports = {
     getConfiguredExchanges,
     getExchangeStatusById,
     updateExchangeActiveStatus,
+    getWithdrawalFees: exports.getWithdrawalFees, // Placeholder, will be defined below
 };
+
+exports.getWithdrawalFees = async (req, res) => {
+  const { exchangeId, currencyCode } = req.params;
+
+  if (!ccxt.exchanges.includes(exchangeId)) {
+    return res.status(400).json({ message: `Exchange ID '${exchangeId}' is not supported by CCXT or is invalid.` });
+  }
+
+  try {
+    const exchange = new ccxt[exchangeId]();
+    // No es estrictamente necesario tener API keys para fetchCurrencies en la mayoría de los exchanges,
+    // pero si se requieren para alguno en particular, esta llamada fallará o devolverá datos limitados.
+
+    await exchange.loadMarkets(); // Es buena práctica para asegurar que todo esté cargado, incluyendo currencies.
+
+    if (!exchange.currencies || Object.keys(exchange.currencies).length === 0) {
+         // Algunos exchanges podrían necesitar fetchCurrencies() explícitamente si loadMarkets no las llena siempre.
+        if (exchange.has['fetchCurrencies']) {
+            await exchange.fetchCurrencies();
+        } else {
+            return res.status(500).json({ message: `Exchange '${exchangeId}' does not provide currency data through common methods.`});
+        }
+    }
+
+    const upperCurrencyCode = currencyCode.toUpperCase();
+    const currencyInfo = exchange.currencies[upperCurrencyCode];
+
+    if (!currencyInfo) {
+      return res.status(404).json({ message: `Currency code '${upperCurrencyCode}' not found or not supported by exchange '${exchangeId}'.` });
+    }
+
+    const networks = currencyInfo.networks;
+    const resultNetworks = [];
+
+    if (networks && Object.keys(networks).length > 0) {
+      for (const [networkCode, networkData] of Object.entries(networks)) {
+        resultNetworks.push({
+          network: networkCode.toUpperCase(), // Nombre de la red (e.g., ERC20, TRC20, BEP20)
+          currency: upperCurrencyCode,
+          fee: networkData.fee,
+          precision: networkData.precision, // Precisión para el fee y monto de retiro
+          active: networkData.active !== false, // Considerar activa si no está explícitamente inactiva
+          deposit: networkData.deposit === true,
+          withdraw: networkData.withdraw === true,
+          // Incluir límites si están disponibles y son útiles
+          // limits: networkData.limits
+        });
+      }
+    } else if (currencyInfo.fee !== undefined) {
+        // Fallback si no hay estructura 'networks' pero sí un 'fee' directo en la moneda (menos común para retiros)
+        // Este fee podría ser ambiguo (¿trading, depósito, retiro?). Usualmente 'networks' es más específico para retiros.
+        // Para ser más precisos, podríamos optar por devolver un array vacío o un mensaje si 'networks' no está.
+        // O, si se asume que este 'fee' es de retiro:
+        resultNetworks.push({
+            network: 'DEFAULT', // O dejarlo como null/undefined
+            currency: upperCurrencyCode,
+            fee: currencyInfo.fee,
+            precision: currencyInfo.precision,
+            active: true, // Asumir activo si no hay más info
+            deposit: true, // Asumir si no hay más info
+            withdraw: true, // Asumir si no hay más info
+        });
+    }
+    // Si resultNetworks está vacío, significa que no se encontró información de fees de retiro estructurada.
+    if (resultNetworks.length === 0) {
+        return res.status(404).json({ message: `No specific withdrawal network fee information found for ${upperCurrencyCode} on ${exchangeId}. The currency might be listed but withdrawal details are unavailable or it uses a general fee not detailed per network.` });
+    }
+
+    res.status(200).json({
+      exchange: exchangeId,
+      currency: upperCurrencyCode,
+      networks: resultNetworks
+    });
+
+  } catch (error) {
+    console.error(`Error fetching withdrawal fees for ${currencyCode} on ${exchangeId}:`, error);
+    // CCXT puede lanzar errores específicos que podríamos querer manejar de forma diferente
+    if (error instanceof ccxt.NetworkError) {
+      res.status(503).json({ message: `Network error connecting to ${exchangeId}.`, error: error.message });
+    } else if (error instanceof ccxt.ExchangeError) {
+      res.status(502).json({ message: `Error from exchange ${exchangeId}.`, error: error.message });
+    } else {
+      res.status(500).json({ message: "An internal server error occurred while fetching withdrawal fees.", error: error.message });
+    }
+  }
+};
+// Re-exporting to ensure the function defined above is correctly assigned
+module.exports.getWithdrawalFees = exports.getWithdrawalFees;

@@ -348,12 +348,19 @@ app.get('/api/exchange-status/:exchangeId', getExchangeStatusById);
 const spotRoutes = require('./routes/spotRoutes');
 app.use('/api/spot', spotRoutes);
 
+// Importar y usar las rutas de Balance
+const balanceRoutes = require('./routes/balanceRoutes');
+app.use('/api/balances', balanceRoutes);
+
+// Importar y usar las rutas de Exchange (para nuevas rutas como withdrawal-fees)
+const exchangeRoutes = require('./routes/exchangeRoutes');
+app.use('/api/exchanges', exchangeRoutes);
+
 
 // Iniciar el servidor
-const server = http.createServer(app);
-server.listen(PORT, () => {
+serveri.listen(PORT, () => {
     console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
     console.log(`Documentación Swagger disponible en http://localhost:${PORT}/api-docs`);
     console.log('Accede al frontend en http://localhost:3000');
-    // emitSpotPricesLoop(io);
+    emitSpotPricesLoop(io);
 });
