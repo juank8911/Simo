@@ -286,4 +286,93 @@ module.exports = {
     getConfiguredExchanges,
     getExchangeStatusById,
     updateExchangeActiveStatus,
+    getWithdrawalFees: exports.getWithdrawalFees, // Placeholder, will be defined below
 };
+
+exports.getWithdrawalFees = async (req, res) => {
+  const { exchangeId, currencyCode } = req.params;
+
+  if (!ccxt.exchanges.includes(exchangeId)) {
+    return res.status(400).json({ message: `Exchange ID '${exchangeId}' is not supported by CCXT or is invalid.` });
+  }
+
+  try {
+    const exchange = new ccxt[exchangeId]();
+    // No es estrictamente necesario tener API keys para fetchCurrencies en la mayoría de los exchanges,
+    // pero si se requieren para alguno en particular, esta llamada fallará o devolverá datos limitados.
+
+    await exchange.loadMarkets(); // Es buena práctica para asegurar que todo esté cargado, incluyendo currencies.
+
+    if (!exchange.currencies || Object.keys(exchange.currencies).length === 0) {
+         // Algunos exchanges podrían necesitar fetchCurrencies() explícitamente si loadMarkets no las llena siempre.
+        if (exchange.has['fetchCurrencies']) {
+            await exchange.fetchCurrencies();
+        } else {
+            return res.status(500).json({ message: `Exchange '${exchangeId}' does not provide currency data through common methods.`});
+        }
+    }
+
+    const upperCurrencyCode = currencyCode.toUpperCase();
+    const currencyInfo = exchange.currencies[upperCurrencyCode];
+
+    if (!currencyInfo) {
+      return res.status(404).json({ message: `Currency code '${upperCurrencyCode}' not found or not supported by exchange '${exchangeId}'.` });
+    }
+
+    const networks = currencyInfo.networks;
+    const resultNetworks = [];
+
+    if (networks && Object.keys(networks).length > 0) {
+      for (const [networkCode, networkData] of Object.entries(networks)) {
+        resultNetworks.push({
+          network: networkCode.toUpperCase(), // Nombre de la red (e.g., ERC20, TRC20, BEP20)
+          currency: upperCurrencyCode,
+          fee: networkData.fee,
+          precision: networkData.precision, // Precisión para el fee y monto de retiro
+          active: networkData.active !== false, // Considerar activa si no está explícitamente inactiva
+          deposit: networkData.deposit === true,
+          withdraw: networkData.withdraw === true,
+          // Incluir límites si están disponibles y son útiles
+          // limits: networkData.limits
+        });
+      }
+    } else if (currencyInfo.fee !== undefined) {
+        // Fallback si no hay estructura 'networks' pero sí un 'fee' directo en la moneda (menos común para retiros)
+        // Este fee podría ser ambiguo (¿trading, depósito, retiro?). Usualmente 'networks' es más específico para retiros.
+        // Para ser más precisos, podríamos optar por devolver un array vacío o un mensaje si 'networks' no está.
+        // O, si se asume que este 'fee' es de retiro:
+        resultNetworks.push({
+            network: 'DEFAULT', // O dejarlo como null/undefined
+            currency: upperCurrencyCode,
+            fee: currencyInfo.fee,
+            precision: currencyInfo.precision,
+            active: true, // Asumir activo si no hay más info
+            deposit: true, // Asumir si no hay más info
+            withdraw: true, // Asumir si no hay más info
+        });
+    }
+    // Si resultNetworks está vacío, significa que no se encontró información de fees de retiro estructurada.
+    if (resultNetworks.length === 0) {
+        return res.status(404).json({ message: `No specific withdrawal network fee information found for ${upperCurrencyCode} on ${exchangeId}. The currency might be listed but withdrawal details are unavailable or it uses a general fee not detailed per network.` });
+    }
+
+    res.status(200).json({
+      exchange: exchangeId,
+      currency: upperCurrencyCode,
+      networks: resultNetworks
+    });
+
+  } catch (error) {
+    console.error(`Error fetching withdrawal fees for ${currencyCode} on ${exchangeId}:`, error);
+    // CCXT puede lanzar errores específicos que podríamos querer manejar de forma diferente
+    if (error instanceof ccxt.NetworkError) {
+      res.status(503).json({ message: `Network error connecting to ${exchangeId}.`, error: error.message });
+    } else if (error instanceof ccxt.ExchangeError) {
+      res.status(502).json({ message: `Error from exchange ${exchangeId}.`, error: error.message });
+    } else {
+      res.status(500).json({ message: "An internal server error occurred while fetching withdrawal fees.", error: error.message });
+    }
+  }
+};
+// Re-exporting to ensure the function defined above is correctly assigned
+module.exports.getWithdrawalFees = exports.getWithdrawalFees;
