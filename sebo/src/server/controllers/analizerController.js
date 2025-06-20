@@ -233,15 +233,6 @@ const deleteAnalysis = async (req, res) => {
     }
 };
 
-module.exports = {
-    createAnalysis,
-    getAllAnalysis,
-    getAnalysisById,
-    updateAnalysis,
-    deleteAnalysis,
-    analyzeSymbols,
-    getFormattedTopAnalysis // Nueva función
-};
 
 // Nueva función
 const getFormattedTopAnalysis = async (limit = 20) => {
@@ -319,4 +310,15 @@ const getFormattedTopAnalysis = async (limit = 20) => {
     console.error("Error fetching formatted top analysis:", error);
     throw error; // Re-lanzar para que el llamador lo maneje
   }
+};
+
+
+module.exports = {
+    createAnalysis,
+    getAllAnalysis,
+    getAnalysisById,
+    updateAnalysis,
+    deleteAnalysis,
+    analyzeSymbols,
+    getFormattedTopAnalysis // Nueva función
 };

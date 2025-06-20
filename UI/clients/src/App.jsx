@@ -16,6 +16,7 @@ function App() {
       .then(data => setAllExchanges(data));
   }, []);
 
+  
   useEffect(() => {
     setSelectedExchanges(allExchanges.filter(ex => ex.isActive));
   }, [allExchanges]);
