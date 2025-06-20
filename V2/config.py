@@ -1,7 +1,7 @@
 # config.py
-WEBSOCKET_URL = "ws://localhost:3001"  # URL base del servidor Socket.IO de Node.js
+WEBSOCKET_URL = "ws://localhost:3000"  # URL base del servidor Socket.IO de Node.js
 NODEJS_NAMESPACE = "/api/spot/arb"     # Namespace para la conexión Socket.IO
-UI_WEBSOCKET_URL = "ws://localhost:8000/api/spot/ui" # URL para el servidor WebSocket de UI de Python
+UI_WEBSOCKET_URL = "ws://localhost:3031/api/spot/ui" # URL para el servidor WebSocket de UI de Python
 TOP_OPPORTUNITY_URL = "http://localhost:3000/api/spot/top" # Endpoint HTTP en Node.js
 API_KEYS = {
     'BINANCE_API_KEY': 'tu_api_key_binance',

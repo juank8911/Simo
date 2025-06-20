@@ -17,7 +17,7 @@ const logServerUrl = () => ({
 export default defineConfig({
   plugins: [react(), logServerUrl()],
   server: {
-    port: 3030,
+    port: 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:3000', // Backend server runs on port 3000
