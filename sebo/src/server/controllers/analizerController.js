@@ -185,9 +185,10 @@ const deleteAnalysis = async (req, res) => {
                 await analysis.save();
                 insertedCount++;
             }
+
         }
                             // --- Fees for exMax ---
-                            const exchangeMaxId = exSymMaxDoc.exchangeId.id_ex;
+                            var exchangeMaxId = exSymMaxDoc.exchangeId.id_ex;
                             const ccxtExMax = new ccxt[exchangeMaxId]();
                             await ccxtExMax.loadMarkets();
 
