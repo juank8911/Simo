@@ -98,13 +98,13 @@ const deleteAnalysis = async (req, res) => {
                 let maxBuyExSyId = null;
 
                 for (const exSy of exchangeSymbols) {
-<<<<<<< HEAD
-                    // Ensure Val_sell and Val_buy are not null or undefined if that's possible
-                    if (exSy.Val_sell != null && exSy.Val_sell < minSell) {
+// Combine logic from both branches and remove conflict markers
+                    // Ensure Val_sell and Val_buy are not null or undefined and greater than 0
+                    if (exSy.Val_sell != null && exSy.Val_sell < minSell && exSy.Val_sell > 0) {
                         minSell = exSy.Val_sell;
                         minSellExSyId = exSy._id;
                     }
-                    if (exSy.Val_buy != null && exSy.Val_buy > maxBuy) {
+                    if (exSy.Val_buy != null && exSy.Val_buy > maxBuy && exSy.Val_buy > 0) {
                         maxBuy = exSy.Val_buy;
                         maxBuyExSyId = exSy._id;
                     }
@@ -113,7 +113,7 @@ const deleteAnalysis = async (req, res) => {
                 // Handle cases where minSell is 0 or Infinity to avoid NaN or Infinity in promedio
                 let promedio;
                 if (minSell === 0 || minSell === Infinity || maxBuy === -Infinity || minSellExSyId === null || maxBuyExSyId === null) {
-                    promedio = 0; // Or some other appropriate default or error indicator
+                    promedio = 0;
                 } else {
                     promedio = ((maxBuy - minSell) / minSell) * 100;
                 }
@@ -125,10 +125,10 @@ const deleteAnalysis = async (req, res) => {
                 let makerFeeExMax = 0;
                 let withdrawalFeeAssetFromExMin = 0;
                 let withdrawalNetworkAssetFromExMin = '';
-                let exSymMinDoc, exSymMaxDoc; // Declare here to use in catch block if needed
+                let exSymMinDoc, exSymMaxDoc;
 
                 try {
-                    if (minSellExSyId && maxBuyExSyId) { // Only proceed if we have valid ExSy IDs
+                    if (minSellExSyId && maxBuyExSyId) {
                         exSymMinDoc = await ExchangeSymbol.findById(minSellExSyId)
                             .populate({ path: 'exchangeId', select: 'id_ex' })
                             .populate({ path: 'symbolId', select: 'id_sy name' });
@@ -175,7 +175,17 @@ const deleteAnalysis = async (req, res) => {
                                     withdrawalFeeAssetFromExMin = currenciesMin[baseCurrency].fee;
                                 }
                             }
-
+                taker_fee_exMax: takerFeeExMax,
+                    maker_fee_exMax: makerFeeExMax,
+                    withdrawal_fee_asset_from_exMin: withdrawalFeeAssetFromExMin,
+                    withdrawal_network_asset_from_exMin: withdrawalNetworkAssetFromExMin,
+                    timestamp: new Date()
+                };
+                const analysis = new Analysis(analysisData);
+                await analysis.save();
+                insertedCount++;
+            }
+        }
                             // --- Fees for exMax ---
                             const exchangeMaxId = exSymMaxDoc.exchangeId.id_ex;
                             const ccxtExMax = new ccxt[exchangeMaxId]();
@@ -196,32 +206,10 @@ const deleteAnalysis = async (req, res) => {
                 } catch (feeError) {
                     const currentSymbolStr = exSymMinDoc && exSymMinDoc.symbolId ? exSymMinDoc.symbolId.id_sy : (symbol ? symbol._id : 'N/A');
                     console.error(`Error fetching fees for symbol ${currentSymbolStr}: ${feeError.message}`);
-                    // Fees will remain 0 or default if an error occurs
                 }
                 // --- Fee fetching logic END ---
 
                 const analysisData = {
-=======
-
-                    if (exSy.Val_sell < minSell && exSy.Val_sell > 0) {
-                        console.log(`MAXl: ${ exSy.Val_sell}------${ minSell}`);
-                        minSell = exSy.Val_sell;
-                        console.log(`MAXl: ${ exSy.Val_sell}------${ minSell}`);
-
-                        minSellExSyId = exSy.exchangeId;
-                    }
-                    if (exSy.Val_buy > maxBuy && exSy.Val_buy > 0) {
-                        maxBuy = exSy.Val_buy;
-                        maxBuyExSyId = exSy.exchangeId
-                    }
-                }
-                var promedio = await ((maxBuy - minSell) / minSell) * 100;
-                if (isNaN(promedio) || promedio === Infinity) {
-                    promedio = 0; // Si el promedio es NaN, lo establecemos a 0
-                }
-                console.log(`Symbol: ${symbol.name}, Min Sell: ${minSell}, Max Buy: ${maxBuy}, Promedio: ${promedio}`);
-                const analysis = new Analysis({
->>>>>>> soket
                     id_exsyMin: minSellExSyId,
                     id_exsyMax: maxBuyExSyId,
                     Val_buy: maxBuy,
@@ -241,6 +229,22 @@ const deleteAnalysis = async (req, res) => {
                 insertedCount++;
             }
         }
+        console.log(`Total analysis documents inserted: ${insertedCount}`);
+        res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+                    id_exsyMin: minSellExSyId,
+                    id_exsyMax: maxBuyExSyId,
+                    Val_buy: maxBuy,
+                    Val_sell: minSell,
+                    promedio: promedio,
+                    symbolId: symbol._id,
+                    taker_fee_exMin: takerFeeExMin,
+                    maker_fee_exMin: makerFeeExMin,
+    
         console.log(`Total analysis documents inserted: ${insertedCount}`);
         res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
 
