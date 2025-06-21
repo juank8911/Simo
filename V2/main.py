@@ -466,11 +466,10 @@ from model import ArbitrageIntelligenceModel
 from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor
 from data_logger import log_operation_to_csv # Import the CSV logger
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE
-from model import ArbitrageModel
 from arbitrage_calculator import calculate_net_profitability
 # from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor (already imported once)
 
-SEBO_API_BASE_URL = "http://localhost:3000/api"
+SEBO_API_BASE_URL = "http://localhost:3001/api"
 
 class CryptoArbitrageApp:
     def __init__(self):
@@ -509,7 +508,7 @@ class CryptoArbitrageApp:
 
         # self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
 
-        self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
+        self.sio.on('spot-arb', namespace='/api/spot/arb', handler=self.on_spot_arb_data_method)
 
 
     async def get_ccxt_exchange_instance(self, exchange_id: str):
@@ -627,121 +626,6 @@ class CryptoArbitrageApp:
         except Exception as e:
             print(f"V2_UpdateBalance: Excepción actualizando balance para {exchange_id}: {e}")
             return False
-    async def load_balance_config_for_exchange(self, exchange_id: str) -> Optional[dict]:
-        if not exchange_id: return None
-        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(api_url) as response:
-                    if response.status == 200:
-                        return await response.json()
-                    elif response.status == 404:
-                        print(f"V2: No existe config de Balance para {exchange_id} en Sebo. Se usarán defaults para el primer registro.")
-                        return {
-                            "id_exchange": exchange_id,
-                            "balance_usdt": 0,
-                        }
-                    else:
-                        print(f"V2: Error API Sebo cargando config Balance para {exchange_id} (helper): {response.status}")
-                        return None
-        except Exception as e:
-            print(f"V2: Excepción cargando config Balance para {exchange_id} (helper): {e}")
-            return None
-            return None
-
-    # The event handler for 'spot-arb' is registered in _register_sio_handlers; remove this decorator.
-    async def on_spot_arb_data_method(self, data):
-        symbol_str = data.get('symbol', 'N/A')
-        # print(f"V2: Oportunidad Sebo: {symbol_str}. Aplicando gestión de capital y riesgo...")
-
-        if not self.usdt_holder_exchange_id:
-            print(f"V2: {symbol_str} | Abortado: usdt_holder_exchange_id no configurado.")
-            return
-
-        config_loaded = await self.load_balance_config(self.usdt_holder_exchange_id)
-
-        if not config_loaded or not self.current_balance_config:
-            print(f"V2: {symbol_str} | Abortado: No se pudo cargar config de Balance para {self.usdt_holder_exchange_id}.")
-            return
-
-
-
-    async def load_balance_config(self, exchange_id: str):
-        if not exchange_id:
-            self.current_balance_config = None
-            return False
-
-        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(api_url) as response:
-                    if response.status == 200:
-                        self.current_balance_config = await response.json()
-                        print(f"V2: Config Balance para {exchange_id} cargada: {self.current_balance_config.get('balance_usdt')} USDT")
-                        return True
-                    else: # Manejar 404 u otros errores
-                        print(f"V2: Error cargando config Balance para {exchange_id} de Sebo: {response.status}")
-                        self.current_balance_config = None # Asegurar que no haya config vieja
-                        # Si es 404, V2 podría intentar crear un doc Balance con defaults via API
-                        # if response.status == 404:
-                        #    await self.create_default_balance_config_on_sebo(exchange_id)
-                        return False
-        except Exception as e:
-            print(f"V2: Excepción al cargar config Balance para {exchange_id}: {e}")
-            self.current_balance_config = None
-            return False
-
-    async def update_balance_on_sebo(self, exchange_id: str, new_balance_usdt: float, full_config_to_upsert: dict):
-        if not exchange_id:
-            print("V2_UpdateBalance: No exchange_id para actualizar balance en Sebo.")
-            return False
-
-        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
-
-        payload = {**full_config_to_upsert}
-        payload['balance_usdt'] = new_balance_usdt
-        payload['id_exchange'] = exchange_id
-        payload['timestamp'] = datetime.now(timezone.utc).isoformat()
-
-        payload.pop('_id', None)
-        payload.pop('__v', None)
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.put(api_url, json=payload) as response:
-                    if response.status == 200:
-                        updated_balance_doc = await response.json()
-                        print(f"V2_UpdateBalance: Balance en Sebo para {exchange_id} actualizado. Nuevo balance: {updated_balance_doc.get('balance_usdt')}")
-                        if exchange_id == self.usdt_holder_exchange_id:
-                            self.current_balance_config = updated_balance_doc
-                        return True
-                    else:
-                        print(f"V2_UpdateBalance: Error API Sebo actualizando balance para {exchange_id}: {response.status} - {await response.text()}")
-                        return False
-        except Exception as e:
-            print(f"V2_UpdateBalance: Excepción actualizando balance para {exchange_id}: {e}")
-            return False
-
-    async def load_balance_config_for_exchange(self, exchange_id: str) -> dict | None:
-        if not exchange_id: return None
-        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(api_url) as response:
-                    if response.status == 200:
-                        return await response.json()
-                    elif response.status == 404:
-                        print(f"V2: No existe config de Balance para {exchange_id} en Sebo. Se usarán defaults para el primer registro.")
-                        return {
-                            "id_exchange": exchange_id,
-                            "balance_usdt": 0,
-                        }
-                    else:
-                        print(f"V2: Error API Sebo cargando config Balance para {exchange_id} (helper): {response.status}")
-                        return None
-        except Exception as e:
-            print(f"V2: Excepción cargando config Balance para {exchange_id} (helper): {e}")
-            return None
 
     async def on_spot_arb_data_method(self, data):
         symbol_str = data.get('symbol', 'N/A')
@@ -1279,6 +1163,32 @@ class CryptoArbitrageApp:
         self.ccxt_instances.clear()
         print("V2: Todas las instancias CCXT programadas para cierre.")
 
+    async def load_balance_config_for_exchange(self, exchange_id: str):
+        """
+        Loads the balance configuration for a given exchange from the Sebo API.
+        Returns the config dict if found, or None if not found or error.
+        """
+        if not exchange_id:
+            return None
+        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url) as response:
+                    if response.status == 200:
+                        return await response.json()
+                    elif response.status == 404:
+                        print(f"V2: No existe config de Balance para {exchange_id} en Sebo. Se usarán defaults para el primer registro.")
+                        return {
+                            "id_exchange": exchange_id,
+                            "balance_usdt": 0,
+                        }
+                    else:
+                        print(f"V2: Error API Sebo cargando config Balance para {exchange_id} (helper): {response.status}")
+                        return None
+        except Exception as e:
+            print(f"V2: Excepción cargando config Balance para {exchange_id} (helper): {e}")
+            return None
+
 async def main():
     app = CryptoArbitrageApp()
     try:
@@ -1292,3 +1202,4 @@ async def main():
         await app.close_ccxt_instances()
 
 if __name__ == "__main__":
+    asyncio.run(main())
