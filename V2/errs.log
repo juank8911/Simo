@@ -1,0 +1,21 @@
+- Placeholder: _build_model() llamado. Reemplazar con la construcción real del modelo.
+Iniciando servidor WebSocket para UI en ws://localhost:3001
+Error en la conexión Socket.IO con Sebo: Unexpected response from server
+V2: Cerrando instancias CCXT...
+V2: Todas las instancias CCXT programadas para cierre.
+Exception ignored in: <function _ProactorBasePipeTransport.__del__ at 0x000002371C5D70D0>
+Traceback (most recent call last):
+  File "C:\Python39\lib\asyncio\proactor_events.py", line 116, in __del__
+    self.close()
+  File "C:\Python39\lib\asyncio\proactor_events.py", line 108, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "C:\Python39\lib\asyncio\base_events.py", line 746, in call_soon
+    self._check_closed()
+  File "C:\Python39\lib\asyncio\base_events.py", line 510, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x000002372841FC10>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x00000237284D2520>, 24151.265)])']
+connector: <aiohttp.connector.TCPConnector object at 0x000002372841FC70>
