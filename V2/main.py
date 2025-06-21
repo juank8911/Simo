@@ -469,7 +469,7 @@ from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEY
 from arbitrage_calculator import calculate_net_profitability
 # from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor (already imported once)
 
-SEBO_API_BASE_URL = "http://localhost:3001/api"
+SEBO_API_BASE_URL = "http://localhost:3000/api"
 
 class CryptoArbitrageApp:
     def __init__(self):
