@@ -11,7 +11,7 @@ import aiohttp
 from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor
 from data_logger import log_operation_to_csv # Import the CSV logger
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL # Updated config imports
-from model import ArbitrageModel # Keep for when model is used
+#from model import ArbitrageModel # Keep for when model is used
 from arbitrage_calculator import calculate_net_profitability
 # Removed duplicate evaluate_and_simulate_arbitrage import
 
@@ -20,7 +20,7 @@ SEBO_API_BASE_URL = "http://localhost:3000/api"
 class CryptoArbitrageApp:
     def __init__(self):
         self.exchanges = {}
-        # self.model = ArbitrageModel() # Assuming model.py and class exist, can be uncommented later
+        #self.model = ArbitrageModel() # Assuming model.py and class exist, can be uncommented later
         self.sio = socketio.AsyncClient(logger=False, engineio_logger=False) # Reduce verbosity
         self.ui_clients = set()
         self.ccxt_instances = {} # For caching CCXT instances
