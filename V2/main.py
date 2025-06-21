@@ -1,3 +1,4 @@
+@@ -1,740 +1,850 @@
 # main.py
 
 import asyncio
@@ -5,13 +6,22 @@ from datetime import datetime, timezone # Añadir timezone
 import websockets # Ensure this is imported for the UI server
 # import websockets.uri # This should remain commented or removed
 import socketio # Ensure this is imported
+# Use built-in ConnectionError instead of importing from socketio
 import json
 import ccxt.async_support as ccxt
 import aiohttp
+<<<<<<< HEAD
+from typing import Optional
+from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor
+from data_logger import log_operation_to_csv # Import the CSV logger
+from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE
+from model import ArbitrageIntelligenceModel
+=======
 from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor
 from data_logger import log_operation_to_csv # Import the CSV logger
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE
 from model import ArbitrageModel
+>>>>>>> 3c0ebdd (feat: Implementar motor de decisión de arbitraje en V2 y mejorar Sebo y UI)
 from arbitrage_calculator import calculate_net_profitability
 # from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor (already imported once)
 
@@ -20,7 +30,11 @@ SEBO_API_BASE_URL = "http://localhost:3000/api"
 class CryptoArbitrageApp:
     def __init__(self):
         self.exchanges = {}
+<<<<<<< HEAD
+        self.model = ArbitrageIntelligenceModel() # Assuming model.py and class exist, can be uncommented later
+=======
         # self.model = ArbitrageModel() # Assuming model.py and class exist, can be uncommented later
+>>>>>>> 3c0ebdd (feat: Implementar motor de decisión de arbitraje en V2 y mejorar Sebo y UI)
         self.sio = socketio.AsyncClient(logger=False, engineio_logger=False) # Reduce verbosity
         self.ui_clients = set()
         self.ccxt_instances = {} # For caching CCXT instances
@@ -49,7 +63,11 @@ class CryptoArbitrageApp:
             print("Socket.IO disconnected from Sebo")
 
         # Register the instance method directly for the 'spot-arb' event
+<<<<<<< HEAD
+        # self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
+=======
         self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
+>>>>>>> 3c0ebdd (feat: Implementar motor de decisión de arbitraje en V2 y mejorar Sebo y UI)
 
     async def get_ccxt_exchange_instance(self, exchange_id: str):
         if exchange_id not in self.ccxt_instances:
@@ -109,6 +127,101 @@ class CryptoArbitrageApp:
         except Exception as e:
             print(f"V2: Exception Sebo API USDT fees: {e}")
         return usdt_withdrawal_info
+
+
+    async def load_balance_config(self, exchange_id: str):
+        if not exchange_id:
+            self.current_balance_config = None
+            return False
+
+        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url) as response:
+                    if response.status == 200:
+                        self.current_balance_config = await response.json()
+                        print(f"V2: Config Balance para {exchange_id} cargada: {self.current_balance_config.get('balance_usdt')} USDT")
+                        return True
+                    else: # Manejar 404 u otros errores
+                        print(f"V2: Error cargando config Balance para {exchange_id} de Sebo: {response.status}")
+                        self.current_balance_config = None # Asegurar que no haya config vieja
+                        # Si es 404, V2 podría intentar crear un doc Balance con defaults via API
+                        # if response.status == 404:
+                        #    await self.create_default_balance_config_on_sebo(exchange_id)
+                        return False
+        except Exception as e:
+            print(f"V2: Excepción al cargar config Balance para {exchange_id}: {e}")
+            self.current_balance_config = None
+            return False
+
+    async def update_balance_on_sebo(self, exchange_id: str, new_balance_usdt: float, full_config_to_upsert: dict):
+        if not exchange_id:
+            print("V2_UpdateBalance: No exchange_id para actualizar balance en Sebo.")
+            return False
+
+        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
+
+        payload = {**full_config_to_upsert}
+        payload['balance_usdt'] = new_balance_usdt
+        payload['id_exchange'] = exchange_id
+        payload['timestamp'] = datetime.now(timezone.utc).isoformat()
+
+        payload.pop('_id', None)
+        payload.pop('__v', None)
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.put(api_url, json=payload) as response:
+                    if response.status == 200:
+                        updated_balance_doc = await response.json()
+                        print(f"V2_UpdateBalance: Balance en Sebo para {exchange_id} actualizado. Nuevo balance: {updated_balance_doc.get('balance_usdt')}")
+                        if exchange_id == self.usdt_holder_exchange_id:
+                            self.current_balance_config = updated_balance_doc
+                        return True
+                    else:
+                        print(f"V2_UpdateBalance: Error API Sebo actualizando balance para {exchange_id}: {response.status} - {await response.text()}")
+                        return False
+        except Exception as e:
+            print(f"V2_UpdateBalance: Excepción actualizando balance para {exchange_id}: {e}")
+            return False
+    async def load_balance_config_for_exchange(self, exchange_id: str) -> Optional[dict]:
+        if not exchange_id: return None
+        api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url) as response:
+                    if response.status == 200:
+                        return await response.json()
+                    elif response.status == 404:
+                        print(f"V2: No existe config de Balance para {exchange_id} en Sebo. Se usarán defaults para el primer registro.")
+                        return {
+                            "id_exchange": exchange_id,
+                            "balance_usdt": 0,
+                        }
+                    else:
+                        print(f"V2: Error API Sebo cargando config Balance para {exchange_id} (helper): {response.status}")
+                        return None
+        except Exception as e:
+            print(f"V2: Excepción cargando config Balance para {exchange_id} (helper): {e}")
+            return None
+            return None
+
+    # The event handler for 'spot-arb' is registered in _register_sio_handlers; remove this decorator.
+    async def on_spot_arb_data_method(self, data):
+        symbol_str = data.get('symbol', 'N/A')
+        # print(f"V2: Oportunidad Sebo: {symbol_str}. Aplicando gestión de capital y riesgo...")
+
+        if not self.usdt_holder_exchange_id:
+            print(f"V2: {symbol_str} | Abortado: usdt_holder_exchange_id no configurado.")
+            return
+
+        config_loaded = await self.load_balance_config(self.usdt_holder_exchange_id)
+
+        if not config_loaded or not self.current_balance_config:
+            print(f"V2: {symbol_str} | Abortado: No se pudo cargar config de Balance para {self.usdt_holder_exchange_id}.")
+            return
+
+
 
     async def load_balance_config(self, exchange_id: str):
         if not exchange_id:
@@ -421,13 +534,13 @@ class CryptoArbitrageApp:
         for item in data:
             symbol = item["symbol"]
             exchanges_raw = item["exchanges"]
-            
+
             # Asegurarse de que los nombres de los exchanges sean consistentes (ej. minúsculas)
             exchanges_formatted = [e.lower() for e in exchanges_raw]
 
             # Obtener precios actuales de los exchanges usando CCXT
             current_prices = await self.fetch_spot_prices(symbol, exchanges_formatted)
-            
+
             if not current_prices:
                 print(f"No se pudieron obtener precios para {symbol}. Saltando este par.")
                 continue
@@ -463,7 +576,7 @@ class CryptoArbitrageApp:
             # Agregar los precios de cada exchange al output_item
             for ex_name, price in current_prices.items():
                 output_item[ex_name] = price
-            
+
             processed_data.append(output_item)
         return processed_data
 
@@ -476,8 +589,8 @@ class CryptoArbitrageApp:
             # The handlers are already registered in __init__ via _register_sio_handlers
             await self.sio.connect(sebo_url, namespaces=['/api/spot/arb'])
             await self.sio.wait() # Keep the client running and listening for events
-
-        except socketio.exceptions.ConnectionError as e:
+        except ConnectionError as e:
+            print(f"Error de conexión Socket.IO con Sebo: {e}")
             print(f"Error de conexión Socket.IO con Sebo: {e}")
         except Exception as e: # Catch other potential exceptions
             print(f"Error en la conexión Socket.IO con Sebo: {e}")
@@ -505,7 +618,10 @@ class CryptoArbitrageApp:
             predicted_difer = None
             try:
                 predicted_difer = self.model.predict(prediction_input)
-                print(f"Predicción del modelo para {symbol}: {predicted_difer*100:.2f}%")
+                if predicted_difer is not None:
+                    print(f"Predicción del modelo para {symbol}: {predicted_difer*100:.2f}%")
+                else:
+                    print(f"Predicción del modelo para {symbol}: No disponible (modelo no entrenado o error).")
             except ValueError as e:
                 print(f"Error al predecir con el modelo: {e}. Asegúrese de que el modelo esté entrenado.")
                 # Si el modelo no está entrenado, no podemos usar su predicción, así que continuamos con la lógica básica.
@@ -513,11 +629,13 @@ class CryptoArbitrageApp:
             # Lógica de decisión de la IA
             # Si el porcentaje de diferencia es mayor que el mínimo requerido
             # O si el modelo predice una ganancia significativa (ajustar umbral según sea necesario)
-            if difer_percentage > MIN_PROFIT_PERCENTAGE or (predicted_difer is not None and predicted_difer * 100 > MIN_PROFIT_PERCENTAGE):
+            if difer_percentage > MIN_PROFIT_PERCENTAGE or (
+                isinstance(predicted_difer, (int, float)) and predicted_difer * 100 > MIN_PROFIT_PERCENTAGE
+            ):
                 print(f"Oportunidad de arbitraje para {symbol} con {difer_percentage:.2f}% de diferencia. Analizando...")
                 # Aquí iría la lógica de compra/venta y transferencia
                 await self.execute_arbitrage(symbol, ex_val_min, ex_val_max, val_min, val_max, difer_percentage)
-                
+
             else:
                 print(f"Diferencia para {symbol} ({difer_percentage:.2f}%) no es suficiente para arbitraje o la IA no predice ganancia. Buscando nuevas oportunidades...")
                 await self.request_top_opportunities()
@@ -578,27 +696,27 @@ class CryptoArbitrageApp:
         # Esto es una simplificación, en la realidad se compraría una cantidad fija de moneda base
         # y se calcularía el costo en USDT.
         # Para el cálculo de arbitraje, nos interesa la diferencia de precios y los costos asociados.
-        
+
         # Ganancia bruta en USDT por unidad de moneda base
         gross_profit_absolute = sell_price - buy_price
-        
+
         # Costo total de la operación por unidad de moneda base
         # Aquí se asume que los fees de compra/venta se aplican al valor de la operación
         # y el fee de transferencia es un costo fijo.
         total_cost_absolute = cost_buy + cost_sell + cost_transfer
-        
+
         net_profit_absolute = gross_profit_absolute - total_cost_absolute
-        
+
         # Calcular la ganancia neta porcentual sobre el precio de compra
         net_profit_percentage = (net_profit_absolute / buy_price) * 100 if buy_price > 0 else 0
-        
+
         print(f"Ganancia bruta: {gross_profit_absolute:.6f} (abs)")
         print(f"Costo total de transacción: {total_cost_absolute:.6f} (abs)")
         print(f"Ganancia neta esperada: {net_profit_percentage:.2f}%")
 
         if net_profit_percentage > 0:
             print(f"La operación generaría ganancias netas. Procediendo con la compra...")
-            
+
             # Paso 1: Realizar la compra en el exchange con el valor más bajo
             buy_exchange = self.exchanges.get(buy_exchange_name.lower())
             if buy_exchange:
@@ -606,14 +724,14 @@ class CryptoArbitrageApp:
                     # Simulación de orden de compra
                     # order = await buy_exchange.create_market_buy_order(symbol, amount)
                     print(f"Comprado {symbol} en {buy_exchange_name} a {buy_price}")
-                    
+
                     # Paso 2: Simular transferencia al otro exchange (esto es complejo y depende de la API del exchange)
                     # En un entorno real, esto implicaría retirar de un exchange y depositar en otro.
                     # Esto puede tomar tiempo y tiene sus propios costos y riesgos.
                     print(f"Simulando transferencia de {symbol} de {buy_exchange_name} a {sell_exchange_name}...")
                     await asyncio.sleep(2) # Simular tiempo de transferencia
                     print(f"Transferencia de {symbol} completada a {sell_exchange_name}.")
-                    
+
                     # Paso 3: Vender en el otro exchange
                     sell_exchange = self.exchanges.get(sell_exchange_name.lower())
                     if sell_exchange:
@@ -681,8 +799,8 @@ class CryptoArbitrageApp:
             print(f"Error inesperado al parsear UI_WEBSOCKET_URL ('{UI_WEBSOCKET_URL}'): {e}. Usando puerto por defecto 3001.")
             ui_port = 3001
 
-        async def ui_websocket_handler(websocket_client, path):
-            print(f"Cliente UI conectado (path: {path})")
+        async def ui_websocket_handler(websocket_client):
+            print(f"Cliente UI conectado")
             self.ui_clients.add(websocket_client)
             try:
                 # Keep connection alive and handle incoming messages if any
@@ -727,7 +845,6 @@ async def main():
     except KeyboardInterrupt:
         print("V2: Aplicación interrumpida.")
     finally:
-        await app.close_ccxt_instances()
+        await app.close_ccxt_instances()More actions
 
 if __name__ == "__main__":
-    asyncio.run(main())
