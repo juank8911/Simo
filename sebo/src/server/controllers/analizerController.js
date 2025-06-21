@@ -107,12 +107,6 @@ const deleteAnalysis = async (req, res) => {
                         maxBuy = exSy.Val_buy;
                         maxBuyExSyId = exSy._id;
                     }
-                
-                var promedio = ((maxBuy - minSell) / minSell) * 100;
-                if (isNaN(promedio) || promedio === Infinity) {
-                    promedio = 0; // Si el promedio es NaN, lo establecemos a 0
-                }
-                console.log(`Symbol: ${symbol.name}, Min Sell: ${minSell}, Max Buy: ${maxBuy}, Promedio: ${promedio}`);
                 }
 
                 // Handle cases where minSell is 0 or Infinity to avoid NaN or Infinity in promedio
@@ -226,13 +220,21 @@ const deleteAnalysis = async (req, res) => {
             }
         }
 
-
         res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
+module.exports = {
+    createAnalysis,
+    getAllAnalysis,
+    getAnalysisById,
+    updateAnalysis,
+    deleteAnalysis,
+    analyzeSymbols,
+    getFormattedTopAnalysis // Nueva función
+};
 
 // Nueva función
 const getFormattedTopAnalysis = async (limit = 20) => {
@@ -310,15 +312,4 @@ const getFormattedTopAnalysis = async (limit = 20) => {
     console.error("Error fetching formatted top analysis:", error);
     throw error; // Re-lanzar para que el llamador lo maneje
   }
-};
-
-
-module.exports = {
-    createAnalysis,
-    getAllAnalysis,
-    getAnalysisById,
-    updateAnalysis,
-    deleteAnalysis,
-    analyzeSymbols,
-    getFormattedTopAnalysis // Nueva función
 };

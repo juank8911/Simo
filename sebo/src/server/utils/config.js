@@ -60,6 +60,6 @@ const EXCHANGES = [
 
 module.exports = {
     EXCHANGES,
-    PORT: process.env.PORT || 3000,
+    PORT: process.env.PORT || 3031, // Nuevo valor
     // Puedes agregar más configuraciones aquí, como rate limits globales
 };

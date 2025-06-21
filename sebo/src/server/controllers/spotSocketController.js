@@ -9,7 +9,7 @@ let lastSpotArbData = []; // Stays as an array, will store data from DB
 // WEBSOCKET_URL from Python config: "ws://localhost:3001/api/spot/arb"
 // The path component /api/spot/arb is treated as a Socket.IO namespace.
 const SPOT_ARB_DATA_NAMESPACE = 
-  process.env.SPOT_ARB_DATA_NAMESPACE || "http://localhost:3000/api/spot/arb";
+  process.env.SPOT_ARB_DATA_NAMESPACE || "/api/spot/arb";
 
 // Función para obtener y emitir los datos cada 5 segundos
 async function emitSpotPricesLoop(io) {
@@ -17,7 +17,8 @@ async function emitSpotPricesLoop(io) {
 
   // Get a handle to the specific namespace
   const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
-
+  ioInstance = io;
+  const targetNamespace = io.of(SPOT_ARB_DATA_NAMESPACE);
   console.log(
     `SpotSocketController: Emitting 'spot-arb' data to namespace: ${SPOT_ARB_DATA_NAMESPACE} (from DB via AnalizerController)`
   );

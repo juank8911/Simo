@@ -17,10 +17,10 @@ const logServerUrl = () => ({
 export default defineConfig({
   plugins: [react(), logServerUrl()],
   server: {
-    port: 3030,
+    port: 3000, // Nuevo valor
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Backend server runs on port 3000
+        target: 'http://localhost:3031', // CAMBIAR a 3031 (nuevo puerto de Sebo)
         changeOrigin: true,
         secure: false,
       },

@@ -16,15 +16,14 @@ function App() {
       .then(data => setAllExchanges(data));
   }, []);
 
-  
   useEffect(() => {
     setSelectedExchanges(allExchanges.filter(ex => ex.isActive));
   }, [allExchanges]);
 
   // useEffect for V2 WebSocket connection
   useEffect(() => {
-    // V2's WebSocket server runs on ws://localhost:3031 (as per V2/config.py UI_WEBSOCKET_URL)
-    const wsUrl = 'ws://localhost:3031'; // Ensure this port matches V2's UI WebSocket server
+    // V2's WebSocket server (Python `websockets` based) should run on 3001
+    const wsUrl = 'ws://localhost:3001'; // NUEVO VALOR para el WS de V2
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {

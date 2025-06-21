@@ -94,7 +94,7 @@ router.get('/analysis', handleSpotAnalysisRequest);
  *       500:
  *         description: Error crítico durante el análisis de spot.
  */
-router.get('/exchange-price', analyzeSymbols);
+router.get('/exchange-price', handleSpotExchangePrice);
 
 /**
  * @swagger
