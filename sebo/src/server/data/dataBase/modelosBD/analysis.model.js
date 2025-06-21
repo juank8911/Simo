@@ -15,7 +15,10 @@ const analysisSchema = new mongoose.Schema({
   withdrawal_fee_asset_from_exMin: { type: Number, default: 0 },
   withdrawal_network_asset_from_exMin: { type: String, default: '' },
   timestamp: { type: Date, default: Date.now }
+}, {
+  collection: 'analysis' // Especifica explícitamente el nombre de la colección
 });
+
 
 const Analysis = mongoose.model('Analysis', analysisSchema);
 
