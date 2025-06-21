@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './components/Layout.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import ActiveExchangesTable from './components/ActiveExchangesTable.jsx';
+import TrainingPage from './components/TrainingPage.jsx'; // Importar TrainingPage
 
 function App() {
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' o 'training'
   const [allExchanges, setAllExchanges] = useState([]);
   const [activeExchanges, setActiveExchanges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +107,9 @@ function App() {
     fetchAndInitialize();
   }, [fetchExchangeStatus]);
 
+  const navigateToDashboard = () => setCurrentView('dashboard');
+  const navigateToTraining = () => setCurrentView('training');
+
   const handleExchangeChange = useCallback(async (event) => {
     const checkbox = event.target;
     const exchangeId = checkbox.dataset.exchangeId;
@@ -139,8 +144,11 @@ function App() {
         loading={loading}
         error={error}
         onExchangeChange={handleExchangeChange}
+        navigateToDashboard={navigateToDashboard}
+        navigateToTraining={navigateToTraining}
       />
-      <ActiveExchangesTable activeExchanges={activeExchanges} />
+      {currentView === 'dashboard' && <ActiveExchangesTable activeExchanges={activeExchanges} />}
+      {currentView === 'training' && <TrainingPage />}
     </Layout>
   );
 }

@@ -19,7 +19,13 @@ export default defineConfig({
   server: {
     port: 3030,
     proxy: {
-      '/api': {
+      '/api/v_dos': { // Proxy for V2 Python backend (model training, etc.)
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/v_dos/, '/api') // Rewrite /api/v_dos to /api for the backend on 8080
+      },
+      '/api': { // Existing proxy for Node.js backend (Sebo)
         target: 'http://localhost:3000', // Backend server runs on port 3000
         changeOrigin: true,
         secure: false,

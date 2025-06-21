@@ -1,0 +1,50 @@
+.training-page-container {
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+.training-page-title {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.training-controls {
+  margin-bottom: 20px;
+}
+
+.training-button {
+  padding: 10px 15px;
+  font-size: 16px;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.training-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.training-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.training-status {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 5px;
+}
+
+.training-status p {
+  margin: 5px 0;
+}
+
+.training-error-details {
+  color: #dc3545; /* Rojo para errores */
+  white-space: pre-wrap; /* Para mantener saltos de línea si los hay */
+}

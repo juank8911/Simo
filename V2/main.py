@@ -5,19 +5,24 @@ import websockets
 import json
 import ccxt.async_support as ccxt
 import aiohttp
+from aiohttp import web
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL, TOP_OPPORTUNITY_URL, API_KEYS, MIN_PROFIT_PERCENTAGE, EXCHANGE_NAMES
-from model import ArbitrageModel
+from .model import ArbitrageModel, generate_sample_data
 
 class CryptoArbitrageApp:
-    def __init__(self):
+    async def __init__(self): # Changed to async to allow await for load_model
         self.exchanges = {}
         self.model = ArbitrageModel()
         self.load_exchanges()
         # Cargar el modelo de IA si ya está entrenado
         try:
-            self.model.load_model()
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, self.model.load_model)
+            print("Modelo de IA cargado.")
         except FileNotFoundError:
             print("Modelo de IA no encontrado. Por favor, entrene el modelo primero.")
+        except Exception as e:
+            print(f"Error al cargar el modelo de IA: {e}")
 
     def load_exchanges(self):
         # Inicializar los exchanges de CCXT
@@ -211,22 +216,53 @@ class CryptoArbitrageApp:
                 print(f"Error obteniendo withdrawal fee en {buy_exchange_name}: {e}")
 
         # Las variables buy_fee, sell_fee y transfer_fee quedan disponibles para su uso posterior
-        # Calcular ganancia bruta
-        gross_profit = ((sell_price - buy_price) / buy_price) * 100
-        
-        # Calcular costos de transacción (aproximado)
-        # Asumimos que el costo se aplica tanto a la compra como a la venta
-        buy_cost = buy_price * buy_fee
-        sell_cost = sell_price * sell_fee
-        total_transaction_cost_percentage = ((buy_cost + sell_cost) / buy_price) * 100
-        
-        net_profit_percentage = gross_profit - total_transaction_cost_percentage
-        
-        print(f"Ganancia bruta: {gross_profit:.2f}%")
-        print(f"Costo total de transacción (aproximado): {total_transaction_cost_percentage:.2f}%")
-        print(f"Ganancia neta esperada: {net_profit_percentage:.2f}%")
 
-        if net_profit_percentage > 0:
+        # Manejo de None para fees y conversión a float
+        if buy_fee is None:
+            print(f"Advertencia: buy_fee para {symbol} en {buy_exchange_name} no fue obtenido. Usando 0.0 para el cálculo.")
+            buy_fee_calc = 0.0
+        else:
+            buy_fee_calc = float(buy_fee)
+
+        if sell_fee is None:
+            print(f"Advertencia: sell_fee para {symbol} en {sell_exchange_name} no fue obtenido. Usando 0.0 para el cálculo.")
+            sell_fee_calc = 0.0
+        else:
+            sell_fee_calc = float(sell_fee)
+
+        if transfer_fee is None:
+            print(f"Advertencia: transfer_fee para {symbol} desde {buy_exchange_name} no fue obtenido. Usando 0.0 para el cálculo.")
+            transfer_fee_abs = 0.0
+        else:
+            transfer_fee_abs = float(transfer_fee) # Asegurar que sea float
+
+        # Calcular costos absolutos por unidad de activo
+        cost_compra_abs = buy_price * buy_fee_calc
+        cost_venta_abs = sell_price * sell_fee_calc # Asume que sell_fee_calc se aplica al precio de venta de una unidad
+
+        # Calcular Ganancia/Pérdida Bruta Absoluta por unidad de activo
+        ganancia_bruta_unitaria_abs = sell_price - buy_price
+        
+        # Calcular Ganancia/Pérdida Neta Absoluta por unidad de activo
+        ganancia_neta_unitaria_abs = ganancia_bruta_unitaria_abs - cost_compra_abs - cost_venta_abs - transfer_fee_abs
+
+        # Calcular Porcentaje de Ganancia Neta sobre el precio de compra
+        if buy_price > 0:
+            net_profit_percentage = (ganancia_neta_unitaria_abs / buy_price) * 100
+        else:
+            net_profit_percentage = 0.0 # O manejar como un error/imposibilidad de calcular
+            print(f"Error: buy_price es 0 para {symbol} en {buy_exchange_name}. No se puede calcular el porcentaje de ganancia neta.")
+
+        # Imprimir información detallada de costos y ganancias
+        print(f"Detalle de Operación para {symbol} ({buy_exchange_name} -> {sell_exchange_name}):")
+        print(f"  Precios: Compra={buy_price:.6f}, Venta={sell_price:.6f}")
+        print(f"  Fees (Tasas/Abs): Compra Tasa={buy_fee_calc:.4f}, Venta Tasa={sell_fee_calc:.4f}, Transferencia Abs={transfer_fee_abs:.6f}")
+        print(f"  Costos Absolutos Unitarios: Compra={cost_compra_abs:.6f}, Venta={cost_venta_abs:.6f}")
+        print(f"  Ganancia Bruta Unitaria (abs): {ganancia_bruta_unitaria_abs:.6f}")
+        print(f"  Ganancia Neta Unitaria (abs): {ganancia_neta_unitaria_abs:.6f}")
+        print(f"  Ganancia Neta Esperada (porcentaje): {net_profit_percentage:.2f}%")
+
+        if net_profit_percentage > MIN_PROFIT_PERCENTAGE: # Comparar con MIN_PROFIT_PERCENTAGE
             print(f"La operación generaría ganancias netas. Procediendo con la compra...")
             
             # Paso 1: Realizar la compra en el exchange con el valor más bajo
@@ -311,22 +347,90 @@ class CryptoArbitrageApp:
         # Iniciar el servidor WebSocket en el puerto extraído o por defecto
         await websockets.serve(handler, "localhost", ui_port)
 
-async def main(): 
-    app = CryptoArbitrageApp()
+    async def train_ia_model(self):
+        try:
+            print("Iniciando generación de datos y entrenamiento del modelo de IA...")
+            # Generar datos de ejemplo
+            # Nota: El número de muestras (e.g., 500) podría ser configurable en el futuro.
+            training_data = generate_sample_data(500)
+
+            # Añadir datos al modelo. self.model es una instancia de ArbitrageModel.
+            # add_data no es async, así que se llama directamente.
+            self.model.add_data(training_data)
+
+            print("Datos generados y añadidos. Procediendo a entrenar el modelo...")
+            # train_model no es async, ejecutar en un executor para no bloquear el event loop.
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, self.model.train_model)
+            # self.model.train_model() ya guarda el modelo internamente.
+
+            print("Entrenamiento del modelo de IA completado.")
+            # Considerar: Notificar a la UI/cliente vía WebSocket si es necesario.
+        except Exception as e:
+            print(f"Error durante el proceso de entrenamiento del modelo de IA: {e}")
+            # Considerar: Notificar a la UI/cliente sobre el error.
+
+# Definir handle_train_model_request fuera de la clase
+async def handle_train_model_request(request):
+    app_instance = request.app['crypto_app']
+    try:
+        # Crear una tarea para que el entrenamiento se ejecute en segundo plano
+        asyncio.create_task(app_instance.train_ia_model())
+        return web.json_response({"message": "Entrenamiento del modelo iniciado."}, status=202)
+    except Exception as e:
+        print(f"Error al iniciar el entrenamiento: {e}")
+        return web.json_response({"error": str(e)}, status=500)
+
+async def main():
+    # app ahora se inicializa de forma asíncrona
+    app = await CryptoArbitrageApp()
+
+    # Configurar y arrancar servidor HTTP API con aiohttp
+    http_server_app = web.Application()
+    http_server_app['crypto_app'] = app  # Store the app instance for access in handlers
+    http_server_app.router.add_post('/api/model/train', handle_train_model_request)
     
-    # Iniciar el cliente WebSocket para consumir datos de arbitraje
-    # y el servidor WebSocket para la UI en paralelo 
-    await asyncio.gather(
+    runner = web.AppRunner(http_server_app)
+    await runner.setup()
+    # Usar un puerto diferente al de la UI WebSocket y al de Sebo
+    # Por ejemplo, 8080 para esta API de backend.
+    site = web.TCPSite(runner, 'localhost', 8080)
+    await site.start()
+    print(f"Servidor HTTP API para V2 iniciado en http://localhost:8080")
+
+    # Tareas principales de la aplicación (consumidor de WebSocket, servidor UI WebSocket)
+    main_tasks = [
         app.connect_and_process(),
-        #app.start_ui_websocket_server() # Descomentar cuando se implemente el servidor de UI en un puerto diferente
-    )
+    ]
+    # Verificar si app.start_ui_websocket_server está definido y agregarlo
+    # La implementación actual de start_ui_websocket_server es síncrona en su definición externa
+    # pero se llama con await websockets.serve que es asíncrono.
+    # La lógica de la tarea original es:
+    # #app.start_ui_websocket_server() # Descomentar cuando se implemente el servidor de UI en un puerto diferente
+    # Lo mantendremos comentado como en el original, pero si se descomenta, debe ser llamado correctamente.
+    if hasattr(app, 'start_ui_websocket_server') and callable(app.start_ui_websocket_server):
+        main_tasks.append(app.start_ui_websocket_server()) # Asegurarse que este método sea async o se llame apropiadamente
+    else:
+        print("Advertencia: app.start_ui_websocket_server no está disponible para iniciar o no está configurado para ejecutarse.")
+
+    try:
+        await asyncio.gather(*main_tasks)
+    except KeyboardInterrupt:
+        print("V2 Aplicación interrumpida por el usuario.")
+    finally:
+        print("Cerrando recursos de V2...")
+        await runner.cleanup() # Limpiar el runner del servidor HTTP
+        # Aquí también se deberían cerrar otros recursos de 'app' si es necesario
+        # Ejemplo: if hasattr(app, 'close_resources'): await app.close_resources()
+        # Asegurarse de que los exchanges de ccxt se cierren si es necesario
+        for ex_name, exchange in app.exchanges.items():
+            if hasattr(exchange, 'close'):
+                try:
+                    await exchange.close()
+                    print(f"Conexión con {ex_name} cerrada.")
+                except Exception as e:
+                    print(f"Error cerrando conexión con {ex_name}: {e}")
+        print("Recursos de V2 cerrados.")
 
 if __name__ == "__main__":
-    # Para ejecutar el entrenamiento del modelo por separado:
-    #from model import ArbitrageModel, generate_sample_data
-    #model = ArbitrageModel()
-    #training_data = generate_sample_data(500) # Generar más datos para un mejor entrenamiento
-    #model.add_data(training_data)
-    #model.train_model()
-    # Guardar el modelo entrenado
     asyncio.run(main())

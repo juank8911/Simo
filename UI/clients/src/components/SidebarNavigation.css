@@ -1,0 +1,24 @@
+.sidebar-navigation {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+}
+
+.sidebar-nav-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  margin: 5px 0;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 1em;
+  width: 100%;
+  box-sizing: border-box; /* Para que padding no aumente el ancho total */
+}
+
+.sidebar-nav-button:hover {
+  background-color: #e0e0e0;
+}
