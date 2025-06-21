@@ -2,10 +2,6 @@
  * crea el crud para el modelo de analisis.model.js
  */
 
-
-
-
-
 /**
  *  llama el metodo de symbolCotroller para obteer los todos los ids de los simbolos
  *  obten todos los datos de exchngeymbol para los simbolos uo por uno
@@ -92,14 +88,12 @@ const deleteAnalysis = async (req, res) => {
             const exchangeSymbols = await ExchangeSymbol.find({ symbolId: symbol._id });
             console.log(`Processing symbol: ${symbol.name}, ExchangeSymbols count: ${exchangeSymbols.length}`);
             if (exchangeSymbols.length > 1) {
-                let minSell = 1000000;
-                let maxBuy = -100000000;
+                let minSell = Infinity; // Initialize minSell to Infinity
+                let maxBuy = -Infinity; // Initialize maxBuy to -Infinity
                 let minSellExSyId = null;
                 let maxBuyExSyId = null;
 
                 for (const exSy of exchangeSymbols) {
-// Combine logic from both branches and remove conflict markers
-                    // Ensure Val_sell and Val_buy are not null or undefined and greater than 0
                     if (exSy.Val_sell != null && exSy.Val_sell < minSell && exSy.Val_sell > 0) {
                         minSell = exSy.Val_sell;
                         minSellExSyId = exSy._id;
@@ -110,15 +104,13 @@ const deleteAnalysis = async (req, res) => {
                     }
                 }
 
-                // Handle cases where minSell is 0 or Infinity to avoid NaN or Infinity in promedio
                 let promedio;
-                if (minSell === 0 || minSell === Infinity || maxBuy === -Infinity || minSellExSyId === null || maxBuyExSyId === null) {
+                if (minSell === Infinity || maxBuy === -Infinity || minSellExSyId === null || maxBuyExSyId === null || minSell === 0) {
                     promedio = 0;
                 } else {
                     promedio = ((maxBuy - minSell) / minSell) * 100;
                 }
 
-                // --- Fee fetching logic START ---
                 let takerFeeExMin = 0;
                 let makerFeeExMin = 0;
                 let takerFeeExMax = 0;
@@ -139,7 +131,6 @@ const deleteAnalysis = async (req, res) => {
                             const symbolStr = exSymMinDoc.symbolId.id_sy;
                             const baseCurrency = exSymMinDoc.symbolId.name;
 
-                            // --- Fees for exMin ---
                             const exchangeMinId = exSymMinDoc.exchangeId.id_ex;
                             const ccxtExMin = new ccxt[exchangeMinId]();
                             await ccxtExMin.loadMarkets();
@@ -175,20 +166,8 @@ const deleteAnalysis = async (req, res) => {
                                     withdrawalFeeAssetFromExMin = currenciesMin[baseCurrency].fee;
                                 }
                             }
-                taker_fee_exMax: takerFeeExMax,
-                    maker_fee_exMax: makerFeeExMax,
-                    withdrawal_fee_asset_from_exMin: withdrawalFeeAssetFromExMin,
-                    withdrawal_network_asset_from_exMin: withdrawalNetworkAssetFromExMin,
-                    timestamp: new Date()
-                };
-                const analysis = new Analysis(analysisData);
-                await analysis.save();
-                insertedCount++;
-            }
 
-        }
-                            // --- Fees for exMax ---
-                            var exchangeMaxId = exSymMaxDoc.exchangeId.id_ex;
+                            const exchangeMaxId = exSymMaxDoc.exchangeId.id_ex;
                             const ccxtExMax = new ccxt[exchangeMaxId]();
                             await ccxtExMax.loadMarkets();
 
@@ -205,29 +184,38 @@ const deleteAnalysis = async (req, res) => {
                         }
                     }
                 } catch (feeError) {
-                    const currentSymbolStr = exSymMinDoc && exSymMinDoc.symbolId ? exSymMinDoc.symbolId.id_sy : (symbol ? symbol._id : 'N/A');
-                    console.error(`Error fetching fees for symbol ${currentSymbolStr}: ${feeError.message}`);
+                    const currentSymbolStr = exSymMinDoc && exSymMinDoc.symbolId ? exSymMinDoc.symbolId.id_sy : (symbol ? symbol.id_sy : 'N/A');
+                    console.error(`Error fetching fees for symbol ${currentSymbolStr} (ID: ${symbol._id}): ${feeError.message}`);
+                    takerFeeExMin = takerFeeExMin || 0;
+                    makerFeeExMin = makerFeeExMin || 0;
+                    takerFeeExMax = takerFeeExMax || 0;
+                    makerFeeExMax = makerFeeExMax || 0;
+                    withdrawalFeeAssetFromExMin = withdrawalFeeAssetFromExMin || 0;
+                    withdrawalNetworkAssetFromExMin = withdrawalNetworkAssetFromExMin || '';
                 }
-                // --- Fee fetching logic END ---
 
-                const analysisData = {
-                    id_exsyMin: minSellExSyId,
-                    id_exsyMax: maxBuyExSyId,
-                    Val_buy: maxBuy,
-                    Val_sell: minSell,
-                    promedio: promedio,
-                    symbolId: symbol._id,
-                    taker_fee_exMin: takerFeeExMin,
-                    maker_fee_exMin: makerFeeExMin,
-                    taker_fee_exMax: takerFeeExMax,
-                    maker_fee_exMax: makerFeeExMax,
-                    withdrawal_fee_asset_from_exMin: withdrawalFeeAssetFromExMin,
-                    withdrawal_network_asset_from_exMin: withdrawalNetworkAssetFromExMin,
-                    timestamp: new Date()
-                };
-                const analysis = new Analysis(analysisData);
-                await analysis.save();
-                insertedCount++;
+                if (minSellExSyId && maxBuyExSyId) {
+                    const analysisData = {
+                        id_exsyMin: minSellExSyId,
+                        id_exsyMax: maxBuyExSyId,
+                        Val_buy: maxBuy,
+                        Val_sell: minSell,
+                        promedio: promedio,
+                        symbolId: symbol._id,
+                        taker_fee_exMin: takerFeeExMin,
+                        maker_fee_exMin: makerFeeExMin,
+                        taker_fee_exMax: takerFeeExMax,
+                        maker_fee_exMax: makerFeeExMax,
+                        withdrawal_fee_asset_from_exMin: withdrawalFeeAssetFromExMin,
+                        withdrawal_network_asset_from_exMin: withdrawalNetworkAssetFromExMin,
+                        timestamp: new Date()
+                    };
+                    const analysis = new Analysis(analysisData);
+                    await analysis.save();
+                    insertedCount++;
+                } else {
+                     // console.warn(`Skipping analysis for symbol ${symbol.name} (ID: ${symbol._id}) due to missing minSellExSyId or maxBuyExSyId.`);
+                }
             }
         }
         console.log(`Total analysis documents inserted: ${insertedCount}`);
@@ -237,56 +225,29 @@ const deleteAnalysis = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-                    id_exsyMin: minSellExSyId,
-                    id_exsyMax: maxBuyExSyId,
-                    Val_buy: maxBuy,
-                    Val_sell: minSell,
-                    promedio: promedio,
-                    symbolId: symbol._id,
-                    taker_fee_exMin: takerFeeExMin,
-                    maker_fee_exMin: makerFeeExMin,
-    
-        console.log(`Total analysis documents inserted: ${insertedCount}`);
-        res.status(200).json({ message: `${insertedCount} analysis documents inserted.` });
 
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-module.exports = {
-    createAnalysis,
-    getAllAnalysis,
-    getAnalysisById,
-    updateAnalysis,
-    deleteAnalysis,
-    analyzeSymbols,
-    getFormattedTopAnalysis // Nueva función
-};
-
-// Nueva función
 const getFormattedTopAnalysis = async (limit = 20) => {
   try {
     const topAnalysisDocs = await Analysis.find({})
       .sort({ promedio: -1 })
       .limit(limit)
       .populate({
-        path: 'symbolId', // Popula el symbolId desde Analysis
+        path: 'symbolId',
         select: 'id_sy name'
       })
       .populate({
-        path: 'id_exsyMin', // Popula el ExchangeSymbol referenciado en id_exsyMin
-        select: 'exchangeId Val_sell', // Solo necesitamos exchangeId de aquí (Val_sell ya está en Analysis)
+        path: 'id_exsyMin',
+        select: 'exchangeId Val_sell',
         populate: {
-          path: 'exchangeId', // Popula el Exchange referenciado en ExchangeSymbol.exchangeId
-          select: 'id_ex name' // Tomamos el id_ex (CCXT ID) y el nombre del exchange
+          path: 'exchangeId',
+          select: 'id_ex name'
         }
       })
       .populate({
-        path: 'id_exsyMax', // Popula el ExchangeSymbol referenciado en id_exsyMax
-        select: 'exchangeId Val_buy', // Solo necesitamos exchangeId de aquí (Val_buy ya está en Analysis)
+        path: 'id_exsyMax',
+        select: 'exchangeId Val_buy',
         populate: {
-          path: 'exchangeId', // Popula el Exchange referenciado en ExchangeSymbol.exchangeId
+          path: 'exchangeId',
           select: 'id_ex name'
         }
       })
@@ -297,28 +258,22 @@ const getFormattedTopAnalysis = async (limit = 20) => {
     }
 
     const formattedResults = topAnalysisDocs.map(doc => {
-      // Validar que las populaciones existan para evitar errores
       if (!doc.symbolId || !doc.id_exsyMin || !doc.id_exsyMin.exchangeId || !doc.id_exsyMax || !doc.id_exsyMax.exchangeId) {
         console.warn(`Skipping analysis doc ${doc._id} due to missing populated fields.`);
         return null;
       }
 
       return {
-        analysis_id: doc._id, // Útil para debugging o referencias futuras
+        analysis_id: doc._id,
         symbol: doc.symbolId.id_sy,
         symbol_name: doc.symbolId.name,
-
         exchange_min_id: doc.id_exsyMin.exchangeId.id_ex,
-        exchange_min_name: doc.id_exsyMin.exchangeId.name, // Nombre legible del exchange
-
+        exchange_min_name: doc.id_exsyMin.exchangeId.name,
         exchange_max_id: doc.id_exsyMax.exchangeId.id_ex,
-        exchange_max_name: doc.id_exsyMax.exchangeId.name, // Nombre legible del exchange
-
-        price_at_exMin_to_buy_asset: doc.Val_sell, // Precio de compra en exMin (venta más baja)
-        price_at_exMax_to_sell_asset: doc.Val_buy, // Precio de venta en exMax (compra más alta)
-
+        exchange_max_name: doc.id_exsyMax.exchangeId.name,
+        price_at_exMin_to_buy_asset: doc.Val_sell,
+        price_at_exMax_to_sell_asset: doc.Val_buy,
         percentage_difference: doc.promedio != null ? doc.promedio.toFixed(2) + '%' : "N/A",
-
         fees_exMin: {
           taker_fee: doc.taker_fee_exMin,
           maker_fee: doc.maker_fee_exMin,
@@ -328,16 +283,25 @@ const getFormattedTopAnalysis = async (limit = 20) => {
         fees_exMax: {
           taker_fee: doc.taker_fee_exMax,
           maker_fee: doc.maker_fee_exMax
-          // No hay withdrawal fee desde exMax en este modelo de datos de Analysis
         },
-        timestamp: doc.timestamp // Timestamp del análisis
+        timestamp: doc.timestamp
       };
-    }).filter(item => item !== null); // Remover los nulos si alguna populación falló
+    }).filter(item => item !== null);
 
     return formattedResults;
 
   } catch (error) {
     console.error("Error fetching formatted top analysis:", error);
-    throw error; // Re-lanzar para que el llamador lo maneje
+    throw error;
   }
+};
+
+module.exports = {
+    createAnalysis,
+    getAllAnalysis,
+    getAnalysisById,
+    updateAnalysis,
+    deleteAnalysis,
+    analyzeSymbols,
+    getFormattedTopAnalysis
 };

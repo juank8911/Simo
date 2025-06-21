@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
+
 const { getLastSpotArb } = require('../controllers/spotSocketController');
-const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controllers/spotController');
+const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controllers/spotController'); // handleSpotExchangePrice sigue siendo problemático si no se ha corregido spotController.js
 const { addExchangesSymbols } = require('../controllers/dbCotroller');
-const {analyzeSymbols} = require('../controllers/analizerController');
+// const {analyzeSymbols} = require('../controllers/analizerController'); // Comentada para usar el objeto completo
+const analizerController = require('../controllers/analizerController');     // Usar el objeto completo
 
 // ...otras rutas...
 
@@ -94,7 +96,8 @@ router.get('/analysis', handleSpotAnalysisRequest);
  *       500:
  *         description: Error crítico durante el análisis de spot.
  */
-router.get('/exchange-price', handleSpotExchangePrice);
+// console.log("Debug: typeof handleSpotExchangePrice === 'function':", typeof handleSpotExchangePrice === 'function');
+// router.get('/exchange-price', handleSpotExchangePrice); // Comentando ruta ya que handleSpotExchangePrice no existe en spotController.js
 
 /**
  * @swagger
@@ -138,7 +141,7 @@ router.get('/exchange-symbols', addExchangesSymbols);
  *       500:
  *         description: Error durante el análisis de promedios.
  */
-router.get('/promedios', analyzeSymbols);
+router.get('/promedios', analizerController.analyzeSymbols); // Usando acceso directo a la propiedad
 
 /**
  * @swagger
