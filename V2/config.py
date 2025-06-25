@@ -8,9 +8,9 @@ API_KEYS = {
     # Agrega aquí las claves de API para otros exchanges que vayas a usar
 }
 
-WEBSOCKET_URL = "ws://localhost:3031/api/spot/arb" # WebSocket de sebo (now on 3031)
-UI_WEBSOCKET_URL = "ws://localhost:3001/api/spot/ui" # WebSocket para la UI de V2 (now on 3001)
-TOP_OPPORTUNITY_URL = "http://localhost:3031/api/spot/top-opportunit" # Sebo API endpoint (now on 3031)
+WEBSOCKET_URL = "ws://localhost:3001" # Sebo WebSocket
+UI_WEBSOCKET_URL = "ws://localhost:3001/api/spot/ui" # WebSocket para la UI
+TOP_OPPORTUNITY_URL = "http://localhost:3031/api/spot/top-opportunities" # Sebo API endpoint (now on 3031)
 
 # Parámetros para la lógica de arbitraje
 MIN_PROFIT_PERCENTAGE = 0.6 # Porcentaje mínimo de ganancia para realizar una operación

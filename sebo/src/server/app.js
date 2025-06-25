@@ -8,6 +8,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const { getExchangesStatus, getExchangeStatusById, getConfiguredExchanges, updateExchangeActiveStatus } = require('./controllers/exchangeController');
 const { handleSpotAnalysisRequest, getTopSpotOpportunities } = require('./controllers/spotController'); // Import new controller
 const http = require('http');
+const {pruebaDistinct} = require('./controllers/analizerController'); // Import pruebaDistinct if needed, otherwise remove
 const { Server } = require('socket.io');
 const { emitSpotPricesLoop } = require('./controllers/spotSocketController');
 // const { connectDB } = require('./utils/db'); // Comentado o eliminado si no se usa
@@ -153,6 +154,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api/exchanges-status', getExchangesStatus);
 
 
+app.get('/pruebaDistinct', pruebaDistinct);
+
 /**
  * @swagger
  * /api/exchange-unique/{exchangeId}:
@@ -272,7 +275,7 @@ app.post('/api/update-exchange-active-status', updateExchangeActiveStatus);
  *         description: Error durante el análisis de spot.
  */
 // app.post('/api/spot/spotanalyzer', handleSpotAnalysisRequest); // Original call
-app.post('/api/spot/spotanalyzer', (req, res) => {
+app.get('/api/spot/spotanalyzer', (req, res) => {
     console.log('ok'); // Muestra "ok" en la consola del servidor
     res.status(200).json({ message: 'ok' }); // Responde con estado 200 y mensaje "ok"
 });

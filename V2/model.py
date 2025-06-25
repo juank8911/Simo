@@ -1,8 +1,8 @@
 import joblib # Para guardar/cargar modelos scikit-learn
 # import tensorflow as tf # Descomentar si se usa TensorFlow/Keras
 # import torch # Descomentar si se usa PyTorch
-# import numpy as np # Probablemente necesario para manipulación de datos
-# import pandas as pd # Probablemente necesario para manipulación de datos
+import numpy as np # Probablemente necesario para manipulación de datos
+import pandas as pd # Probablemente necesario para manipulación de datos
 
 class ArbitrageIntelligenceModel:
     def __init__(self, model_path=None, hyperparameters=None):
@@ -42,22 +42,52 @@ class ArbitrageIntelligenceModel:
         }
         print("Entrenamiento simulado completado.")
         return history
+    
+    def _preprocess_features(self, X_dict):
+        """
+        Placeholder para convertir el diccionario de entrada a un formato
+        que el modelo pueda entender (ej. un DataFrame de pandas).
+        El orden de las características debe ser consistente con los datos de entrenamiento.
+        """
+        # Para este ejemplo, extraeremos algunas características clave y las pondremos en un DataFrame.
+        # Una implementación real manejaría valores faltantes, escalado, codificación, etc.
+        
+        feature_columns = [
+            'gross_percentage_diff_sebo', 'current_percentage_difference',
+            'ex_min_taker_fee_rate_sebo', 'ex_max_taker_fee_rate_sebo',
+            'asset_withdrawal_fee_from_ex_min_sebo', 'determined_investment_usdt_v2'
+        ]
+        
+        features = {key: X_dict.get(key, 0) for key in feature_columns}
+        
+        df = pd.DataFrame([features], columns=feature_columns)
+        df.fillna(0, inplace=True)
+        
+        # print(f"V2 Modelo: Características preprocesadas para predicción:\n{df.to_string()}")
+        return df
 
     def predict(self, X):
-        print("Placeholder: predict() llamado.")
+        """
+        Predice si se debe ejecutar una oportunidad de arbitraje.
+        X se espera que sea un diccionario de características para una sola oportunidad.
+        Devuelve: [1] para ejecutar, [0] para saltar.
+        """
+        print("V2 Modelo: predict() llamado con los datos de la oportunidad.")
         if self.model:
-            # TODO: Asegurarse que X está preprocesado igual que los datos de entrenamiento.
-            # return self.model.predict(X) # Ejemplo scikit-learn
-            # Simular predicción
-            if hasattr(X, 'shape'):
-                num_samples = X.shape[0]
-                # import numpy as np # Necesario para el placeholder si se usa
-                # return np.random.choice([0, 1], size=num_samples) # Ejemplo predicción binaria
-                return [0] * num_samples # Placeholder más simple
-            return [0]
+            # 1. Preprocesar el diccionario de entrada al formato que el modelo espera
+            preprocessed_X = self._preprocess_features(X)
+            
+            # 2. Realizar la predicción
+            # --- Lógica de Predicción Placeholder ---
+            # Aquí iría la llamada real: return self.model.predict(preprocessed_X)
+            # Por ahora, simulamos una decisión: ejecutar si la rentabilidad neta es positiva.
+            net_profit_usdt = X.get('net_profitability_results', {}).get('net_profit_usdt', 0)
+            decision = 1 if net_profit_usdt > 0 else 0
+            print(f"V2 Modelo: Placeholder decision -> {decision} (Net Profit: {net_profit_usdt:.4f} USDT)")
+            return [decision]
         else:
-            print("Error: Modelo no cargado o entrenado.")
-            return None
+            print("V2 Modelo: Error: Modelo no cargado o entrenado. No se puede predecir. Se devuelve 0 (no ejecutar).")
+            return [0]
 
     def evaluate(self, X_test, y_test):
         print("Placeholder: evaluate() llamado.")

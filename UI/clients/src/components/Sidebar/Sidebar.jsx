@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ExchangeList from '../ExchangeList/ExchangeList.jsx';
 import SpotsMenu from '../SpotsMenu/SpotsMenu.jsx';
 import styles from './Sidebar.module.css';
 
-const Sidebar = ({ allExchanges, setAllExchanges }) => {
+const Sidebar = ({ allExchanges, onExchangeChange, loading, error }) => {
   const navigate = useNavigate();
 
   return (
@@ -18,7 +19,9 @@ const Sidebar = ({ allExchanges, setAllExchanges }) => {
       <div className="sidebar-content">
         <ExchangeList
           allExchanges={allExchanges}
-          setAllExchanges={setAllExchanges}
+          onExchangeChange={onExchangeChange}
+          loading={loading}
+          error={error}
         />
         <button
           className={styles.menuHeader}

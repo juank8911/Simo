@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { getLastSpotArb } = require('../controllers/spotSocketController');
 const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controllers/spotController'); // handleSpotExchangePrice sigue siendo problemático si no se ha corregido spotController.js
-const { addExchangesSymbols } = require('../controllers/dbCotroller');
+const { addExchangesSymbols,addExchangesSymbolsForSimbols } = require('../controllers/dbCotroller');
 // const {analyzeSymbols} = require('../controllers/analizerController'); // Comentada para usar el objeto completo
 const analizerController = require('../controllers/analizerController');     // Usar el objeto completo
 
@@ -119,7 +119,7 @@ router.get('/analysis', handleSpotAnalysisRequest);
  *       500:
  *         description: Error al agregar símbolos de exchanges.
  */
-router.get('/exchange-symbols', addExchangesSymbols);
+router.get('/exchange-symbols', addExchangesSymbolsForSimbols);
 
 /**
  * @swagger

@@ -4,23 +4,26 @@ import asyncio
 from datetime import datetime, timezone # Añadir timezone
 import websockets # Ensure this is imported for the UI server
 # import websockets.uri # This should remain commented or removed
-import socketio # Ensure this is imported
+import socketio
+from socketio.exceptions import ConnectionError as SocketIOConnectionError
 import json
 import ccxt.async_support as ccxt
 import aiohttp
 from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor
 from data_logger import log_operation_to_csv # Import the CSV logger
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL # Updated config imports
-# from model import ArbitrageModel # Keep for when model is used - Temporarily commented due to ImportError
+from model import ArbitrageIntelligenceModel # Importar el modelo de IA
 from arbitrage_calculator import calculate_net_profitability
 # Removed duplicate evaluate_and_simulate_arbitrage import
+from typing import Optional
 
-SEBO_API_BASE_URL = "http://localhost:3000/api"
+SEBO_API_BASE_URL = "http://localhost:3031/"
 
 class CryptoArbitrageApp:
     def __init__(self):
         self.exchanges = {}
-        # self.model = ArbitrageModel() # Assuming model.py and class exist, can be uncommented later
+        # Instanciar el modelo de IA. El modelo intentará cargarse desde el path si existe.
+        self.model = ArbitrageIntelligenceModel(model_path="trained_model.pkl")
         self.sio = socketio.AsyncClient(logger=False, engineio_logger=False) # Reduce verbosity
         self.ui_clients = set()
         self.ccxt_instances = {} # For caching CCXT instances
@@ -28,20 +31,18 @@ class CryptoArbitrageApp:
         self.usdt_holder_exchange_id = "binance" # Placeholder, V2 needs to set this
         self.global_sl_active_flag = False # Flag for global stop-loss
         self.http_session = None # Added for shared aiohttp session
+        self._session_lock = asyncio.Lock() # Lock to prevent race conditions on session creation
         self._register_sio_handlers()
-        # self.load_exchanges() # Call removed
         # Cargar el modelo de IA si ya está entrenado
-        # try:
-        #     # self.model = ArbitrageModel() # Ensure this remains commented if not ready
-        #     self.model.load_model() # Assuming model.py and class exist
-        # except FileNotFoundError:
-        #     print("Modelo de IA no encontrado. Por favor, entrene el modelo primero.")
-        # except AttributeError: # If self.model is None
-        #     print("Atributo de modelo no encontrado, posible problema con inicialización de modelo.")
+        try:
+            self.model.load_model()
+        except Exception as e:
+            print(f"V2: Advertencia: No se pudo cargar el modelo de IA pre-entrenado. Se usará un modelo sin entrenar. Error: {e}")
 
     async def _ensure_http_session(self):
-        if self.http_session is None or self.http_session.closed:
-            self.http_session = aiohttp.ClientSession()
+        async with self._session_lock:
+            if self.http_session is None or self.http_session.closed:
+                self.http_session = aiohttp.ClientSession()
 
     def _register_sio_handlers(self):
         @self.sio.event
@@ -54,7 +55,8 @@ class CryptoArbitrageApp:
             print("Socket.IO disconnected from Sebo")
 
         # Register the instance method directly for the 'spot-arb' event
-        self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
+        self.sio.on('spot-arb', self.on_spot_arb_data_method, namespace='/api/spot/arb')
+        
 
     async def get_ccxt_exchange_instance(self, exchange_id: str):
         if exchange_id not in self.ccxt_instances:
@@ -171,7 +173,7 @@ class CryptoArbitrageApp:
             print(f"V2_UpdateBalance: Excepción actualizando balance para {exchange_id}: {e}")
             return False
 
-    async def load_balance_config_for_exchange(self, exchange_id: str) -> dict | None:
+    async def load_balance_config_for_exchange(self, exchange_id: str) -> Optional[dict]:
         if not exchange_id: return None
         api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
         try:
@@ -311,6 +313,20 @@ class CryptoArbitrageApp:
                 # El error ya está en profitability_results, simplemente lo relanzamos
                 raise Exception(f"Profitability calculation error: {profitability_results.get('error_message')}")
 
+            # --- PASO CLAVE: PREDICCIÓN CON EL MODELO DE IA ---
+            # Aquí es donde el flujo de datos del socket se conecta con el modelo.
+            # El modelo recibe el diccionario completo de características para hacer su predicción.
+            try:
+                prediction_result = self.model.predict(ai_input_dict)
+                # La predicción es una lista/array, tomamos el primer elemento.
+                ai_decision = prediction_result[0] if prediction_result else 0
+                ai_input_dict['ai_model_prediction'] = ai_decision
+                print(f"V2: {symbol_str} | Predicción del Modelo de IA: {'EJECUTAR' if ai_decision == 1 else 'SALTAR'}")
+            except Exception as model_e:
+                print(f"V2: {symbol_str} | Error durante la predicción del modelo: {model_e}")
+                ai_input_dict['ai_model_prediction'] = 0 # Default to safe action (no ejecutar)
+                ai_input_dict['ai_model_error'] = str(model_e)
+
             print(f"V2: {symbol_str} | Rentabilidad Neta: {profitability_results.get('net_profit_percentage'):.4f}% ({profitability_results.get('net_profit_usdt'):.4f} USDT) para inversión de {amount_to_invest_usdt:.2f} USDT.")
 
             simulation_results = await evaluate_and_simulate_arbitrage(ai_input_dict, self)
@@ -373,18 +389,14 @@ class CryptoArbitrageApp:
     # analyze_and_act, execute_arbitrage, request_top_opportunities will be removed.
 
     async def connect_and_process(self):
-        # WEBSOCKET_URL is "ws://localhost:3000/api/spot/arb"
-        # For python-socketio, the main URL is ws://localhost:3000
-        # The namespace is /api/spot/arb
-        sebo_url = "ws://localhost:3000" # Base URL for Socket.IO connection
+        sebo_url = "ws://localhost:3031"  # <-- Usa 3031, no 3000
         try:
-            # The handlers are already registered in __init__ via _register_sio_handlers
+            print(f"Conectando a Sebo Socket.IO en {sebo_url} (namespace /api/spot/arb)...")
             await self.sio.connect(sebo_url, namespaces=['/api/spot/arb'])
-            await self.sio.wait() # Keep the client running and listening for events
-
-        except socketio.exceptions.ConnectionError as e:
+            await self.sio.wait()
+        except SocketIOConnectionError as e:
             print(f"Error de conexión Socket.IO con Sebo: {e}")
-        except Exception as e: # Catch other potential exceptions
+        except Exception as e:
             print(f"Error en la conexión Socket.IO con Sebo: {e}")
         finally:
             if self.sio.connected:
@@ -417,6 +429,7 @@ class CryptoArbitrageApp:
         # Extraer el puerto de UI_WEBSOCKET_URL (ej. ws://localhost:3001/api/ui -> 3001)
         try:
             # Example: "ws://localhost:3031/api/spot/ui" -> 3031
+            print(f"'{UI_WEBSOCKET_URL}' --------------------------------")
             ui_port = int(UI_WEBSOCKET_URL.split(":")[-1].split("/")[0])
         except ValueError:
             print(f"Error al parsear puerto de UI_WEBSOCKET_URL: '{UI_WEBSOCKET_URL}'. Usando puerto por defecto 3001.")

@@ -7,9 +7,7 @@ let ioInstance = null; // Para guardar la instancia de socket.io
 let lastSpotArbData = []; // Stays as an array, will store data from DB
 // Define the target namespace based on the Python client's URL path
 // WEBSOCKET_URL from Python config: "ws://localhost:3001/api/spot/arb"
-// The path component /api/spot/arb is treated as a Socket.IO namespace.
-const SPOT_ARB_DATA_NAMESPACE = 
-  process.env.SPOT_ARB_DATA_NAMESPACE || "http.//localhost:3001/api/spot/arb";
+const SPOT_ARB_DATA_NAMESPACE = process.env.SEBO_WEBSOCKET_NAMESPACE || '/api/spot/arb';
 
 // Función para obtener y emitir los datos cada 5 segundos
 async function emitSpotPricesLoop(io) {
@@ -57,5 +55,3 @@ const getLastSpotArb = (req, res) => {
 };
 
 module.exports = { emitSpotPricesLoop, getLastSpotArb };
-
-

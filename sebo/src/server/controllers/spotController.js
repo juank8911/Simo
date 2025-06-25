@@ -73,6 +73,34 @@ const handleSpotAnalysisRequest = async (req, res) => {
   }
 };
 
+const deleteExchangeSymbolsMen1 = async () => {
+  /**
+   * Elimina los ExchangeSymbol cuyo symbolId aparece menos de 2 veces en la colección.
+   */
+  try {
+    // Agrupa por symbolId y cuenta cuántas veces aparece cada uno
+    const symbolsWithCounts = await ExchangeSymbol.aggregate([
+      { $group: { _id: "$symbolId", count: { $sum: 1 } } },
+      { $match: { count: { $lt: 2 } } }
+    ]);
+
+    if (!symbolsWithCounts.length) {
+      console.log("No ExchangeSymbols con symbolId repetido menos de 2 veces.");
+      return { deletedCount: 0 };
+    }
+
+    const symbolIdsToDelete = symbolsWithCounts.map(s => s._id);
+
+    const result = await ExchangeSymbol.deleteMany({ symbolId: { $in: symbolIdsToDelete } });
+
+    console.log(`ExchangeSymbols eliminados: ${result.deletedCount}`);
+    return { deletedCount: result.deletedCount };
+  } catch (error) {
+    console.error("Error eliminando ExchangeSymbols con symbolId < 2:", error);
+    throw error;
+  }
+};
+
 const getTopOpportunitiesFromDB = async (limit = 20) => {
   try {
     const opportunities = await Analysis.find({})
@@ -101,6 +129,7 @@ const getTopOpportunitiesFromDB = async (limit = 20) => {
       .exec();
 
     if (!opportunities) {
+      console.warn("No opportunities found in DB.");
       return [];
     }
 
@@ -131,6 +160,8 @@ const getTopOpportunitiesFromDB = async (limit = 20) => {
   }
 };
 
+
+
 const getTopSpotOpportunities = async (req, res) => {
   try {
     const topOpportunities = await getTopOpportunitiesFromDB();
@@ -154,5 +185,6 @@ module.exports = {
     // readSpotCoinsFileHelper, // Removed
     // handleSpotExchangePrice, // Removed
     getTopOpportunitiesFromDB,
+    deleteExchangeSymbolsMen1,
     readExchangeConfig,
 };
