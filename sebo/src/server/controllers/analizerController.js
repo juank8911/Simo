@@ -21,6 +21,8 @@ const ExchangeSymbol = require('../data/dataBase/modelosBD/exchangeSymbol.model'
 const Symbol = require('../data/dataBase/modelosBD/symbol.model');
 const {deleteExchangeSymbolsMen1} = require('./spotController'); // Importing spotController to use its methods
 const ccxt = require('ccxt'); // Added ccxt import
+const Balance = require('../data/dataBase/modelosBD/balance.model');
+const balanceController = require('./balanceController');
 
 /**
  * crea el crud para el modelo de analisis.model.js
@@ -60,14 +62,56 @@ const getAnalysisById = async (req, res) => {
 
 const getTop20porPorcetaje = async (req, res) => {
     try {
+        // Obtiene el último balance registrado
+        const lastBalance = await balanceController.getLastBalance();
+
         // Obtiene los 20 primeros documentos completos de analysis ordenados por promedio (mayor a menor)
         const topAnalysis = await Analysis.find({})
             .sort({ promedio: -1 })
             .limit(20)
-            .populate('id_exsyMin')
-            .populate('id_exsyMax')
-            .populate('symbolId');
-        res.status(200).json(topAnalysis);
+            .populate({
+                path: 'id_exsyMin',
+                populate: {
+                    path: 'exchangeId',
+                    select: 'id_ex name'
+                }
+            })
+            .populate({
+                path: 'id_exsyMax',
+                populate: {
+                    path: 'exchangeId',
+                    select: 'id_ex name'
+                }
+            })
+            .populate({
+                path: 'symbolId',
+                select: 'id_sy name'
+            });
+
+        // Formatea la respuesta para incluir los datos relevantes
+        const formatted = topAnalysis.map(doc => ({
+            analysis_id: doc._id,
+            symbol_id: doc.symbolId ? doc.symbolId.id_sy : null,
+            symbol_name: doc.symbolId ? doc.symbolId.name : null,
+            exchange_min: doc.id_exsyMin && doc.id_exsyMin.exchangeId ? {
+                id: doc.id_exsyMin.exchangeId.id_ex,
+                name: doc.id_exsyMin.exchangeId.name,
+                ...doc.id_exsyMin._doc // incluye otros campos de id_exsyMin si los necesitas
+            } : null,
+            exchange_max: doc.id_exsyMax && doc.id_exsyMax.exchangeId ? {
+                id: doc.id_exsyMax.exchangeId.id_ex,
+                name: doc.id_exsyMax.exchangeId.name,
+                ...doc.id_exsyMax._doc // incluye otros campos de id_exsyMax si los necesitas
+            } : null,
+            promedio: doc.promedio,
+            timestamp: doc.timestamp
+        }));
+
+        // Devuelve el lastBalance y los análisis juntos
+        return {
+            lastBalance: lastBalance || {},
+            analysis: formatted
+        };
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -342,6 +386,7 @@ const getFormattedTopAnalysis = async (limit = 20) => {
       }
 
       return {
+
         analysis_id: doc._id,
         symbol: doc.symbolId.id_sy,
         symbol_name: doc.symbolId.name,
@@ -363,7 +408,8 @@ const getFormattedTopAnalysis = async (limit = 20) => {
           maker_fee: doc.maker_fee_exMax
         },
         timestamp: doc.timestamp
-      };
+      }
+      ;
     }).filter(item => item !== null);
 
     return formattedResults;

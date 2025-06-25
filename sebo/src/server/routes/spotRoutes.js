@@ -7,6 +7,7 @@ const { addExchangesSymbols,addExchangesSymbolsForSimbols } = require('../contro
 // const {analyzeSymbols} = require('../controllers/analizerController'); // Comentada para usar el objeto completo
 const analizerController = require('../controllers/analizerController');     // Usar el objeto completo
 
+
 // ...otras rutas...
 
 /**

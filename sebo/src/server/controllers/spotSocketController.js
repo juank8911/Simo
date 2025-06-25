@@ -1,7 +1,7 @@
 // const ccxt = require("ccxt"); // No longer needed here
 // const { readSpotCoinsFileHelper } = require("./spotController"); // No longer needed here
 // const { getTopOpportunitiesFromDB } = require('./spotController'); // Removed
-const { getFormattedTopAnalysis } = require('./analizerController'); // Added
+const { getFormattedTopAnalysis, getTop20porPorcetaje } = require('./analizerController'); // Added
 let ioInstance = null; // Para guardar la instancia de socket.io
 
 let lastSpotArbData = []; // Stays as an array, will store data from DB
@@ -22,7 +22,7 @@ async function emitSpotPricesLoop(io) {
   while (true) {
     try {
       // Call the new function from analizerController.js
-      const detailedOpportunities = await getFormattedTopAnalysis();
+      const detailedOpportunities = await getTop20porPorcetaje();
 
       if (detailedOpportunities && detailedOpportunities.length > 0) {
         lastSpotArbData = detailedOpportunities; // Update lastSpotArbData with the formatted data

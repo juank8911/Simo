@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout/Layout.jsx';
 import ConnectionPage from './pages/ConnectionPage/ConnectionPage.jsx';
 import Top20DetailedPage from './pages/Top20DetailedPage/Top20DetailedPage.jsx';
+import DataStreamPage from './components/DataStreamPage/DataStreamPage';
 
 // Un componente simple para la página de inicio.
 const HomePage = () => (
@@ -78,6 +79,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/conexion" element={<ConnectionPage allExchanges={allExchanges} />} />
         <Route path="/top20-detailed" element={<Top20DetailedPage />} />
+        <Route path="/datos" element={<DataStreamPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

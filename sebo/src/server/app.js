@@ -359,6 +359,8 @@ app.use('/api/balances', balanceRoutes);
 const exchangeRoutes = require('./routes/exchangeRoutes');
 app.use('/api/exchanges', exchangeRoutes);
 
+const configRoutes = require('./routes/configRoutes');
+app.use('/api/config', configRoutes); // Nueva ruta para la configuración de exchanges
 
 // Iniciar el servidor
 serveri.listen(PORT, () => {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ExchangeList from '../ExchangeList/ExchangeList.jsx';
@@ -31,11 +30,18 @@ const Sidebar = ({ allExchanges, onExchangeChange, loading, error }) => {
           Conexión
         </button>
         <button
-          className={styles.menuHeader} // Assuming similar styling is desired
+          className={styles.menuHeader}
           style={{ fontWeight: 'bold', textAlign: 'left', width: '100%' }}
           onClick={() => navigate('/top20-detailed')}
         >
-          Top 20 Detallado
+          Top 20
+        </button>
+        <button
+          className={styles.menuHeader}
+          style={{ fontWeight: 'bold', textAlign: 'left', width: '100%' }}
+          onClick={() => navigate('/datos')}
+        >
+          Datos
         </button>
         <SpotsMenu />
       </div>
