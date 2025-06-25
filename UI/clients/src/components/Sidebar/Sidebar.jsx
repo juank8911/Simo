@@ -4,7 +4,7 @@ import ExchangeList from '../ExchangeList/ExchangeList.jsx';
 import SpotsMenu from '../SpotsMenu/SpotsMenu.jsx';
 import styles from './Sidebar.module.css';
 
-const Sidebar = ({ allExchanges, onExchangeChange, loading, error }) => {
+const Sidebar = ({ allExchanges, setAllExchanges }) => {
   const navigate = useNavigate();
 
   return (
@@ -18,9 +18,7 @@ const Sidebar = ({ allExchanges, onExchangeChange, loading, error }) => {
       <div className="sidebar-content">
         <ExchangeList
           allExchanges={allExchanges}
-          onExchangeChange={onExchangeChange}
-          loading={loading}
-          error={error}
+          setAllExchanges={setAllExchanges}
         />
         <button
           className={styles.menuHeader}
@@ -30,18 +28,11 @@ const Sidebar = ({ allExchanges, onExchangeChange, loading, error }) => {
           Conexión
         </button>
         <button
-          className={styles.menuHeader}
+          className={styles.menuHeader} // Assuming similar styling is desired
           style={{ fontWeight: 'bold', textAlign: 'left', width: '100%' }}
           onClick={() => navigate('/top20-detailed')}
         >
-          Top 20
-        </button>
-        <button
-          className={styles.menuHeader}
-          style={{ fontWeight: 'bold', textAlign: 'left', width: '100%' }}
-          onClick={() => navigate('/datos')}
-        >
-          Datos
+          Top 20 Detallado
         </button>
         <SpotsMenu />
       </div>

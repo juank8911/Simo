@@ -1,17 +1,13 @@
 import React from 'react';
 import Sidebar from '../Sidebar/Sidebar.jsx';
+import { Outlet } from 'react-router-dom';
 import styles from '../../App.module.css';
 
-const Layout = ({ children, allExchanges, onExchangeChange, loading, error }) => (
+const Layout = ({ allExchanges, setAllExchanges }) => (
   <div className={styles.layout}>
-    <Sidebar
-      allExchanges={allExchanges}
-      onExchangeChange={onExchangeChange}
-      loading={loading}
-      error={error}
-    />
+    <Sidebar allExchanges={allExchanges} setAllExchanges={setAllExchanges} />
     <main className={styles.main}>
-      {children}
+      <Outlet />
     </main>
   </div>
 );

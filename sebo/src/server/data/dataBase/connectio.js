@@ -39,12 +39,11 @@ const mongoose = require('mongoose');
 
 
 // Conexión a la base de datos MongoDB
-const dbURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bd_simo';
+const dbURI = 'mongodb://localhost:27017/bd_simo';
 
 const connectDB = async () => {
   try {
-    // Las opciones useNewUrlParser y useUnifiedTopology están obsoletas en versiones recientes de Mongoose
-    await mongoose.connect(dbURI);
+    await mongoose.connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true });
     console.log('Conexión a MongoDB exitosa');
   } catch (err) {
     console.error('Error al conectar a MongoDB:', err);
