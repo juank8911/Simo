@@ -131,12 +131,12 @@ for (const symbol of symbols) {
         continue;
       }
 
-      // // Verifica si ya existe la combinación en ExchangeSymbol
-      // const exists = await ExchangeSymbol.findOne({
-      //   symbolId: symbol._id,
-      //   exchangeId: exchange._id,
-      // });
-      // if (exists) continue;
+      // Verifica si ya existe la combinación en ExchangeSymbol
+      const exists = await ExchangeSymbol.findOne({
+        symbolId: symbol._id,
+        exchangeId: exchange._id,
+      });
+      if (exists) continue;
 
       let ticker = null;
       try {

@@ -117,7 +117,7 @@ class CryptoArbitrageApp:
             # ... lógica de procesamiento ... 
             # if not self.usdt_holder_exchange_id: raise Exception("usdt_holder_exchange_id not configured.")
             # if not await self.load_balance_config(self.usdt_holder_exchange_id): raise Exception("Could not load balance config.")
-            usdt_withdrawal_info = await get_usdt_withdrawal_info(self.http_session, self.usdt_holder_exchange_id)
+            # usdt_withdrawal_info = await get_usdt_withdrawal_info(self.http_session, self.usdt_holder_exchange_id)
             ai_input_dict.update({
                 'analysis_id': data.get('analysis_id'), 'symbol': symbol_str,
                 'determined_investment_usdt_v2': 100.0
