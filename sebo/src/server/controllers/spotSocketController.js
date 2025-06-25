@@ -22,7 +22,7 @@ async function emitSpotPricesLoop(io) {
   while (true) {
     try {
       // Call the new function from analizerController.js
-      const detailedOpportunities = await getTop20porPorcetaje();
+      const detailedOpportunities = await getFormattedTopAnalysis();
 
       if (detailedOpportunities && detailedOpportunities.length > 0) {
         lastSpotArbData = detailedOpportunities; // Update lastSpotArbData with the formatted data
