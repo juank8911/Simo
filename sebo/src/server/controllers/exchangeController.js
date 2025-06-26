@@ -83,35 +83,25 @@ const getExchangeStatusAndPrice = async (exchangeId, exchangeName) => {
 
 // Endpoint para obtener el estado de todos los exchanges
 const getExchangesStatus = async (req, res) => {
-    try {
-        const allExchangesFromDB = await Exchange.find({});
+    const statusPromises = EXCHANGES.map(ex => getSingleExchangeStatusAndPrice(ex.id, ex.name));
+    const allExchangesStatus = await Promise.allSettled(statusPromises); //NOSONAR
 
-        if (!allExchangesFromDB || allExchangesFromDB.length === 0) {
-            return res.json([]);
+    const formattedResults = allExchangesStatus.map(promiseResult => {
+        if (promiseResult.status === 'fulfilled') {
+            return promiseResult.value;
+        } else {
+            // Esto debería ser manejado por el catch dentro de getExchangeStatusAndPrice,
+            // pero es un fallback en caso de error Promise.allSettled
+            return {
+                id: 'unknown',
+                name: 'Unknown Exchange',
+                connected: false,
+                error: promiseResult.reason ? promiseResult.reason.message : 'Unknown error'
+            };
         }
+    });
 
-        const statusPromises = allExchangesFromDB.map(ex => getSingleExchangeStatusAndPrice(ex.id_ex, ex.name));
-        const allExchangesStatus = await Promise.allSettled(statusPromises);
-
-        const formattedResults = allExchangesStatus.map((promiseResult, index) => {
-            if (promiseResult.status === 'fulfilled') {
-                return promiseResult.value;
-            } else {
-                const failedExchange = allExchangesFromDB[index];
-                return {
-                    id: failedExchange.id_ex,
-                    name: failedExchange.name,
-                    connected: false,
-                    error: promiseResult.reason ? promiseResult.reason.message : 'Unknown error'
-                };
-            }
-        });
-
-        res.json(formattedResults);
-    } catch (error) {
-        console.error('Error en getExchangesStatus:', error);
-        res.status(500).json({ error: 'Error interno del servidor al obtener el estado de los exchanges.' });
-    }
+    res.json(formattedResults);
 };
 
 // (Original getAvailableExchanges is replaced by getConfiguredExchanges)

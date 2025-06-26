@@ -14,6 +14,4 @@ router.put('/exchange/:exchangeId', balanceController.updateBalanceByExchange); 
 router.put('/:balanceId', balanceController.updateBalanceById);     // PUT /api/balances/mongo_object_id
 router.delete('/:balanceId', balanceController.deleteBalanceById); // DELETE /api/balances/mongo_object_id
 
-
-
 module.exports = router;
