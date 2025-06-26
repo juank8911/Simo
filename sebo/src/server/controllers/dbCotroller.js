@@ -99,101 +99,6 @@ const addSymbols = async (req, res) => {
  *  */
 
 
-const addExchangesSymbolsForSimbols = async (req, res) => {
-const usedSymbols = await ExchangeSymbol.distinct('symbolId');
-const usedSymbolObjectIds = await usedSymbols.map(symbol => symbol._id);
-
-// obteer de symbolos los simbolos diferentes a usedSymbolObjectIds
-const symbols = await Symbol.find({ _id: { $nin: usedSymbolObjectIds } });
-//toma todos los exchanges que tengan el isActive = true  
-const activeExchanges = await Exchange.find({ isActive: true });
-
-let addedCount = 0;
-let failedCount = 0;
-const errors = [];
-console.log(`Found ${symbols.length} symbols to process.`);
-for (const symbol of symbols) {
-  const exchangeSymbolsToInsert = [];
-  console.log(`Processing symbol: ${symbol.id_sy}`);
-  for (const exchange of activeExchanges) {
-    // console.log(`Processing exchange: ${exchange.id_ex} for symbol: ${symbol.id_sy}`);
-    try {
-      const exchangeId = exchange.id_ex;
-      const ccxtExchange = new ccxt[exchangeId]({
-        'timeout': 10000,
-        'enableRateLimit': true,
-      });
-      await ccxtExchange.loadMarkets();
-
-      // Busca el símbolo en los mercados del exchange
-      const market = ccxtExchange.markets[symbol.id_sy];
-      if (!market || !market.spot || !market.active || market.quote !== 'USDT') {
-        continue;
-      }
-
-      // Verifica si ya existe la combinación en ExchangeSymbol
-      const exists = await ExchangeSymbol.findOne({
-        symbolId: symbol._id,
-        exchangeId: exchange._id,
-      });
-      if (exists) continue;
-
-      let ticker = null;
-      try {
-        // console.log(`Fetching ticker for ${symbol.id_sy} on ${exchangeId}`);
-        // Solo intenta obtener el ticker si el símbolo existe en el exchange
-        if (ccxtExchange.markets[symbol.id_sy]) {
-          ticker = await ccxtExchange.fetchTicker(symbol.id_sy);
-        } else {
-          // Si el símbolo no existe en el exchange, no crea el documento y continúa con el siguiente exchange
-          continue;
-        }
-      } catch (tickerError) {
-        // Si falla, deja los valores en 0
-        console.warn(`Could not fetch ticker for ${symbol.id_sy} on ${exchangeId}: ${tickerError.message}`);
-        continue; // Continúa con el siguiente exchange
-      }
-
-      exchangeSymbolsToInsert.push({
-        symbolId: symbol._id,
-        exchangeId: exchange._id,
-        Val_buy: ticker ? ticker.bid : 0,
-        Val_sell: ticker ? ticker.ask : 0,
-        timestamp: new Date(),
-      });
-      addedCount++;
-      console.log(`Added ExchangeSymbol for ${exchangeSymbolsToInsert.length}`);
-    } catch (err) {
-      failedCount++;
-      errors.push({
-        symbol: symbol.id_sy,
-        exchange: exchange.id_ex,
-        error: err.message,
-      });
-      continue;
-    }
-  }
-  if (exchangeSymbolsToInsert.length > 1) {
-    try {
-      console.log(`Inserting ${exchangeSymbolsToInsert.length} ExchangeSymbol entries for symbol ${symbol.id_sy}`);
-      await ExchangeSymbol.insertMany(exchangeSymbolsToInsert);
-    } catch (bulkError) {
-      cosole.error(`Error inserting ExchangeSymbol entries for symbol ${symbol.id_sy}:`, bulkError);
-      errors.push({
-        symbol: symbol.id_sy,
-        error: bulkError.message,
-      });
-    }
-  }
-}
-console.log(`Finished processing symbols. Added ${addedCount} ExchangeSymbol entries, failed ${failedCount}.`);
-res.status(200).json({
-  message: `Processed symbols. Added ${addedCount} ExchangeSymbol entries, failed ${failedCount}.`,
-  errors,
-});
-}
-
-
 
 const addExchangesSymbols = async (req, res) => {
   let addedCount = 0;
@@ -209,11 +114,15 @@ const addExchangesSymbols = async (req, res) => {
     */
     // Primero, obtenemos todos los _id de Exchange que ya están en ExchangeSymbol
     const usedExchangeId  = await ExchangeSymbol.distinct('exchangeId');
-    const  existingExchangeObjectIdsExchange = await usedExchangeId.map(es => es.exchangeId);
+    const  existingExchangeObjectIdsInSymbols = await usedExchangeId.map(es => es.exchangeId);
 
-    // Obtener todos los exchanges cuyo _id NO esté en existingExchangeObjectIdsExchange
+    // Populate para obtener el id_ex del Exchange
+    console.log(`Found ${Object.values(existingExchangeObjectIdsInSymbols).slice(0, 2)}  ...  existing ExchangeSymbol entries.`);
+    // Luego, buscamos Exchanges que cumplan las condiciones y cuyo _id NO esté en la lista obtenida
     const activeExchanges = await Exchange.find({
-      _id: { $nin: existingExchangeObjectIdsExchange }
+      isActive: true,
+      connectionType: 'ccxt',
+      _id : { $nin: existingExchangeObjectIdsInSymbols } // $nin significa "not in"
     });
 
     if (activeExchanges.length === 0) {
@@ -444,6 +353,5 @@ module.exports = {
   addExchanges,
   addSymbols,
   addExchangesSymbols,
-  addExchangesSymbolsForSimbols,
   getAllExchangeSymbols
 };
