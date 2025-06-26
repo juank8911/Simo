@@ -1,6 +1,9 @@
 /** crea todo el crud para symbol */
-const Symbol = require('../models/symbol');
-
+const Symbol = require('../data/dataBase/modelosBD/symbol.model'); // Asegúrate de tener el modelo Symbolº
+const exchangeController = require('./exchangeController'); // Asegúrate de tener el controlador de exchange
+const ccxt = require('ccxt'); // Asegúrate de tener ccxt instalado*
+const spotController = require('./spotController'); // Asegúrate de tener el controlador de spot
+const { Exchange } = require('../data/dataBase/connectio');
 // Obtener todos los símbolos
 exports.getSymbols = async (req, res) => {
   try {
@@ -23,6 +26,36 @@ exports.getSymbolById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.addSymbolsForExchange = async (req, res) => {
+  try {
+    console.log(`Agregando símbolos para el exchange...`);
+    const exchanges = ccxt.exchanges; // Obtiene la configuración de los exchanges activos
+    for (const ex of exchanges) {
+      // Itera sobre cada exchange
+      if(exc = await Exchange.findOne({ id_ex: ex.id_ex })) {
+        if(exc.isActive) {
+          console.log(`Exchange ${ex.id_ex} ya existe, omitiendo...`);
+          symbols = exchange.symbols; // Obtiene los símbolos del exchange
+          for (const symbol of symbols) {
+            if (await Symbol.findById(symbol.id_sy) ) continue;
+            if(!symbol.spot || !symbol.active || !symbol.symbol.match(/\/USDT$/)) continue; // Solo agregar símbolos de tipo spot
+            const symbolAdd = new Symbol({
+              id_sy: symbol.id_sy,
+              name: symbol.name,
+              // Agrega más símbolos según sea necesario
+            });
+            await symbolAdd.save();
+          }   
+        }
+      }
+
+  }
+    console.log(`Símbolos agregados para el exchange`);
+    res.status(200).json({ message: `Símbolos agregados para los exchanges` });
+  } catch (err) {
+    console.error(`Error al agregar símbolos para el exchange:`, err);
+}
 
 // Crear un nuevo símbolo
 exports.createSymbol = async (req, res) => {
@@ -76,4 +109,4 @@ exports.deleteSymbol = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};
+}};
