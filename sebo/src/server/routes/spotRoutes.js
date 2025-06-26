@@ -10,7 +10,7 @@ const analizerController = require('../controllers/analizerController');     // 
 
 // ...otras rutas...
 
-router.get('/symbol', symbolController.addSymbolsForExchange);
+// router.get('/symbol', symbolController.addSymbolsForExchange);
 /**
  * @swagger
  * /api/spot/arb:
