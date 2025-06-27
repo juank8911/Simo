@@ -43,6 +43,19 @@ async function emitSpotPricesLoop(io) {
     socket.on('disconnect', () => {
       console.log(`SpotSocketController: Cliente desconectado del namespace ${SPOT_ARB_DATA_NAMESPACE} con ID: ${socket.id}`);
     });
+
+    // Listen for balance updates pushed from V2 client
+    socket.on('v2_last_balance_update', async (balanceData) => {
+      console.log(`Sebo (${SPOT_ARB_DATA_NAMESPACE}): Received 'v2_last_balance_update' from client ${socket.id}:`, JSON.stringify(balanceData, null, 2));
+      // TODO: What should Sebo do with this?
+      // - Update its own database? (V2 already does this via HTTP PUT)
+      // - Use it for internal analytics/models?
+      // - Re-broadcast to other connected clients on this namespace? (It already sends on connect)
+      // For now, just log receipt. If Sebo needs to update its DB from this,
+      // it would call a controller function here, e.g., something like:
+      // await require('./balanceController').updateBalanceFromV2Socket(balanceData);
+      // This also means the HTTP PUT from V2 might become redundant or serve as a fallback.
+    });
   });
 
   // El bucle while (true) para emitir 'spot-arb' continúa como antes,

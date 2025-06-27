@@ -34,6 +34,13 @@ const Sidebar = ({ allExchanges, setAllExchanges }) => {
         >
           Top 20 Detallado
         </button>
+        <button
+          className={styles.menuHeader} // Assuming similar styling is desired
+          style={{ fontWeight: 'bold', textAlign: 'left', width: '100%' }}
+          onClick={() => navigate('/data-view')}
+        >
+          Data View & Model
+        </button>
         <SpotsMenu />
       </div>
     </div>
