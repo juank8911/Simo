@@ -8,6 +8,7 @@ import socketio # Ensure this is imported
 import json
 import ccxt.async_support as ccxt
 import aiohttp
+import urllib.parse # Added for URL parsing
 from arbitrage_executor import evaluate_and_simulate_arbitrage # Import the executor
 from data_logger import log_operation_to_csv # Import the CSV logger
 from config import WEBSOCKET_URL, UI_WEBSOCKET_URL # Updated config imports
@@ -29,6 +30,7 @@ class CryptoArbitrageApp:
         self.global_sl_active_flag = False # Flag for global stop-loss
         self.http_session = None # Added for shared aiohttp session
         self.latest_balances_from_sebo = None # To store balances received from Sebo
+        self.current_top_20_list = [] # To store the top 20 list from Sebo
         self._register_sio_handlers()
         # self.load_exchanges() # Call removed
         # Cargar el modelo de IA si ya está entrenado
@@ -58,6 +60,19 @@ class CryptoArbitrageApp:
         self.sio.on('spot-arb', namespace='/api/spot/arb')(self.on_spot_arb_data_method)
         # Register new handler for 'balances-update' event from Sebo
         self.sio.on('balances-update', namespace='/api/spot/arb')(self.on_balances_update_from_sebo)
+        # Register new handler for 'top_20_data' event from Sebo
+        self.sio.on('top_20_data', namespace='/api/spot/arb')(self.on_top_20_data_received)
+
+    async def on_top_20_data_received(self, data):
+        # print(f"V2: Recibido 'top_20_data' de Sebo: {len(data) if isinstance(data, list) else 'Invalid data type'} items")
+        if isinstance(data, list):
+            self.current_top_20_list = data
+            # Placeholder for broadcasting to UI - will be implemented in Step 3.2
+            # await self.broadcast_top_20_to_ui()
+        else:
+            print(f"V2: Recibido 'top_20_data' con tipo de dato inesperado: {type(data)}")
+            self.current_top_20_list = []
+
 
     async def on_balances_update_from_sebo(self, data):
         print(f"V2: Recibido 'balances-update' de Sebo: {data}")
@@ -388,13 +403,19 @@ class CryptoArbitrageApp:
     # analyze_and_act, execute_arbitrage, request_top_opportunities will be removed.
 
     async def connect_and_process(self):
-        # WEBSOCKET_URL is "ws://localhost:3000/api/spot/arb"
-        # For python-socketio, the main URL is ws://localhost:3000
+        # WEBSOCKET_URL from config is "ws://localhost:3031/api/spot/arb"
+        # For python-socketio, the main URL is ws://localhost:3031
         # The namespace is /api/spot/arb
-        sebo_url = "ws://localhost:3000" # Base URL for Socket.IO connection
+        # WEBSOCKET_URL is already imported from config at the top of the file
+
+        parsed_url = urllib.parse.urlparse(WEBSOCKET_URL)
+        sebo_base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        namespace = parsed_url.path if parsed_url.path else '/' # Ensure namespace is at least '/'
+
         try:
+            print(f"V2: Connecting to Sebo Socket.IO at {sebo_base_url} with namespace {namespace}")
             # The handlers are already registered in __init__ via _register_sio_handlers
-            await self.sio.connect(sebo_url, namespaces=['/api/spot/arb'])
+            await self.sio.connect(sebo_base_url, namespaces=[namespace])
             await self.sio.wait() # Keep the client running and listening for events
 
         except socketio.exceptions.ConnectionError as e:

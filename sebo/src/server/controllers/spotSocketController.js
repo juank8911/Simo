@@ -10,7 +10,7 @@ let lastSpotArbData = []; // Stays as an array, will store data from DB
 // WEBSOCKET_URL from Python config: "ws://localhost:3001/api/spot/arb"
 // The path component /api/spot/arb is treated as a Socket.IO namespace.
 const SPOT_ARB_DATA_NAMESPACE =
-  process.env.SPOT_ARB_DATA_NAMESPACE || "http.//localhost:3001/api/spot/arb";
+  process.env.SPOT_ARB_DATA_NAMESPACE || "/api/spot/arb";
 
 // Función para obtener y emitir los datos cada 5 segundos
 async function emitSpotPricesLoop(io) {
@@ -58,14 +58,16 @@ async function emitSpotPricesLoop(io) {
       if (detailedOpportunities && detailedOpportunities.length > 0) {
         lastSpotArbData = detailedOpportunities; // Update lastSpotArbData with the formatted data
 
-        // Emit each opportunity individually
-        // 'opportunity' now has the detailed JSON structure with fees
+        // Emit each opportunity individually for V2's per-opportunity processing
         for (const opportunity of detailedOpportunities) {
           targetNamespace.emit("spot-arb", opportunity);
         }
-        // console.log(`Emitted ${detailedOpportunities.length} detailed opportunities to ${SPOT_ARB_DATA_NAMESPACE}`);
+        // Also emit the full list for V2 to have the complete Top 20
+        targetNamespace.emit("top_20_data", detailedOpportunities);
+        // console.log(`Emitted ${detailedOpportunities.length} detailed opportunities individually and as 'top_20_data' to ${SPOT_ARB_DATA_NAMESPACE}`);
       } else {
-        // console.log('No detailed opportunities found in DB to emit.');
+        targetNamespace.emit("top_20_data", []); // Emit empty list if no opportunities
+        // console.log('No detailed opportunities found in DB to emit. Emitted empty top_20_data.');
         lastSpotArbData = []; // Clear if no data found
       }
 
