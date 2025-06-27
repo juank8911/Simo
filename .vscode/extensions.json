@@ -2,6 +2,8 @@
     "recommendations": [
         "kilocode.kilo-code",
         "google.geminicodeassist",
-        "silasnevstad.gpthelper"
+        "silasnevstad.gpthelper",
+        "github.copilot",
+        "blackboxapp.blackboxagent"
     ]
 }

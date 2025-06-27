@@ -125,7 +125,8 @@ const deleteAnalysis = async (req, res) => {
                             .populate({ path: 'exchangeId', select: 'id_ex' })
                             .populate({ path: 'symbolId', select: 'id_sy name' });
                         exSymMaxDoc = await ExchangeSymbol.findById(maxBuyExSyId)
-                            .populate({ path: 'exchangeId', select: 'id_ex' });
+                            .populate({ path: 'exchangeId', select: 'id_ex' })
+
 
                         if (exSymMinDoc && exSymMinDoc.exchangeId && exSymMinDoc.symbolId && exSymMaxDoc && exSymMaxDoc.exchangeId) {
                             const symbolStr = exSymMinDoc.symbolId.id_sy;
@@ -135,24 +136,26 @@ const deleteAnalysis = async (req, res) => {
                             const ccxtExMin = new ccxt[exchangeMinId]();
                             await ccxtExMin.loadMarkets();
 
-                            if (ccxtExMin.has['fetchTradingFees']) {
-                                const tradingFeesMin = await ccxtExMin.fetchTradingFees();
-                                if (tradingFeesMin[symbolStr]) {
-                                    takerFeeExMin = tradingFeesMin[symbolStr].taker;
-                                    makerFeeExMin = tradingFeesMin[symbolStr].maker;
+                            if (ccxtExMin.markets[symbolStr]) {
+                                console.log(symbolStr)
+                                // const tradingFeesMin = await ccxtExMin.fetchTradingFees();
+                                if (ccxtExMin.markets[symbolStr]) {
+                                    takerFeeExMin = ccxtExMin.markets[symbolStr]['taker'];
+                                    makerFeeExMin = ccxtExMin.markets[symbolStr]['maker'];
+                                    percentage =  ccxtExMin.markets[symbolStr]['percentage'];
+                                    console.log(takerFeeExMin, makerFeeExMin, percentage)
                                 }
-                            } else if (ccxtExMin.markets && ccxtExMin.markets[symbolStr]) {
-                                takerFeeExMin = ccxtExMin.markets[symbolStr].taker;
-                                makerFeeExMin = ccxtExMin.markets[symbolStr].maker;
                             }
-
-                            if (ccxtExMin.has['fetchCurrencies']) {
-                                const currenciesMin = await ccxtExMin.fetchCurrencies();
-                                if (currenciesMin[baseCurrency] && currenciesMin[baseCurrency].networks) {
+                            // Get withdrawal fees from the exchange where we would buy (exMin)
+                            if (ccxtExMin.currencies && ccxtExMin.currencies[baseCurrency]) {
+                                const currencyInfo = ccxtExMin.currencies[baseCurrency];
+                                
+                                // Prefer finding the best fee from the 'networks' object
+                                if (currencyInfo.networks && Object.keys(currencyInfo.networks).length > 0) {
                                     let bestNetworkFee = Infinity;
                                     let bestNetworkName = '';
-                                    for (const netId in currenciesMin[baseCurrency].networks) {
-                                        const network = currenciesMin[baseCurrency].networks[netId];
+                                    for (const netId in currencyInfo.networks) {
+                                        const network = currencyInfo.networks[netId];
                                         if (network.active !== false && network.withdraw !== false && network.fee != null && network.fee < bestNetworkFee) {
                                             bestNetworkFee = network.fee;
                                             bestNetworkName = netId.toUpperCase();
@@ -162,11 +165,10 @@ const deleteAnalysis = async (req, res) => {
                                         withdrawalFeeAssetFromExMin = bestNetworkFee;
                                         withdrawalNetworkAssetFromExMin = bestNetworkName;
                                     }
-                                } else if (currenciesMin[baseCurrency] && currenciesMin[baseCurrency].fee) {
-                                    withdrawalFeeAssetFromExMin = currenciesMin[baseCurrency].fee;
+                                } else if (currencyInfo.fee != null) { // Fallback to a general currency fee if available
+                                    withdrawalFeeAssetFromExMin = currencyInfo.fee;
                                 }
                             }
-
                             const exchangeMaxId = exSymMaxDoc.exchangeId.id_ex;
                             const ccxtExMax = new ccxt[exchangeMaxId]();
                             await ccxtExMax.loadMarkets();
@@ -226,6 +228,19 @@ const deleteAnalysis = async (req, res) => {
     }
 };
 
+const feesAanalisisUpdate = async (data, res) => {
+    try {
+        console.log(data);
+        //obtiee los [id_ex,connectionType] de la coleccion exchages por si id findbyid = data.minSellExSyId , data.maxBuyExSyId
+        //obtiene los datos de [id_sy , name]  
+    } 
+    catch{
+        res.status(500).json({ message: error.message });
+    }
+
+}
+
+
 const getFormattedTopAnalysis = async (limit = 20) => {
   try {
     const topAnalysisDocs = await Analysis.find({})
@@ -252,13 +267,13 @@ const getFormattedTopAnalysis = async (limit = 20) => {
         }
       })
       .exec();
-
     if (!topAnalysisDocs || topAnalysisDocs.length === 0) {
       return [];
     }
 
     const formattedResults = topAnalysisDocs.map(doc => {
       if (!doc.symbolId || !doc.id_exsyMin || !doc.id_exsyMin.exchangeId || !doc.id_exsyMax || !doc.id_exsyMax.exchangeId) {
+        console.log(JSON.stringify(doc));
         console.warn(`Skipping analysis doc ${doc._id} due to missing populated fields.`);
         return null;
       }

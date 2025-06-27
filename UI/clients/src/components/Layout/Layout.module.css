@@ -10,10 +10,6 @@
   height: 60px; /* Example fixed height for the header, adjust as needed */
 }
 
-.balanceDisplayWrapper {
-  /* The BalanceDisplay component will be placed here */
-  /* No specific positioning needed here if mainHeader's flex properties handle it */
-}
 
 .pageContent {
   padding: 20px; /* Padding for the actual page content below the header */
@@ -21,30 +17,3 @@
   flex-grow: 1;
 }
 
-/* Ensure the main content area in App.module.css or here allows for this structure.
-   If appStyles.main is already a flex container with column direction, that's good.
-   Example if appStyles.main needs adjustment or if you use layoutStyles.mainContent:
-*/
-/*
-.mainContent {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  height: 100vh; /* Ensures the layout takes full viewport height if .layout is also full height */
-  overflow-y: auto; /* Allows scrolling for content that exceeds viewport height */
-}
-*/
-
-/* The .layout and .main styles are likely in App.module.css and should be like:
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.main {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: auto; // Important if content overflows
-}
-*/

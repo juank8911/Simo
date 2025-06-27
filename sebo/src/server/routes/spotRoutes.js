@@ -6,11 +6,7 @@ const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controll
 const { addExchangesSymbols } = require('../controllers/dbCotroller');
 // const {analyzeSymbols} = require('../controllers/analizerController'); // Comentada para usar el objeto completo
 const analizerController = require('../controllers/analizerController');     // Usar el objeto completo
-<<<<<<< HEAD
 const symbolController = require('../controllers/symbolController'); // Importar controlador de símbolos
-=======
-
->>>>>>> a8a211c6324b3b12aa46ac490122a39187e9769e
 
 // ...otras rutas...
 
