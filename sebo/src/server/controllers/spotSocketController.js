@@ -30,7 +30,7 @@ async function emitSpotPricesLoop(io) {
       const latestBalance = await getLatestBalanceDocument();
       if (latestBalance) { // latestBalance puede ser null si no hay documentos
         socket.emit('balances-update', latestBalance); // Enviar el objeto único
-        console.log(`SpotSocketController: Evento 'balances-update' emitido al cliente ${socket.id} con el último balance.`);
+        // console.log(`SpotSocketController: Evento 'balances-update' emitido al cliente ${socket.id} con el último balance.`);
       } else {
         console.log(`SpotSocketController: No se encontró ningún documento de balance para emitir al cliente ${socket.id}.`);
         socket.emit('balances-update', {}); // Enviar objeto vacío o null si no hay balance
@@ -46,7 +46,7 @@ async function emitSpotPricesLoop(io) {
 
     // Listen for balance updates pushed from V2 client
     socket.on('v2_last_balance_update', async (balanceData) => {
-      console.log(`Sebo (${SPOT_ARB_DATA_NAMESPACE}): Received 'v2_last_balance_update' from client ${socket.id}:`, JSON.stringify(balanceData, null, 2));
+      // console.log(`Sebo (${SPOT_ARB_DATA_NAMESPACE}): Received 'v2_last_balance_update' from client ${socket.id}:`, JSON.stringify(balanceData, null, 2));
       // TODO: What should Sebo do with this?
       // - Update its own database? (V2 already does this via HTTP PUT)
       // - Use it for internal analytics/models?

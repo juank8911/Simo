@@ -5,10 +5,10 @@ from datetime import datetime, timezone
 import numpy as np # Para características de modelo, si es necesario
 import pandas as pd # Para características de modelo, si es necesario
 
-from V2.arbitrage_calculator import calculate_net_profitability
-from V2.arbitrage_executor import evaluate_and_simulate_arbitrage
-from V2.data_logger import log_operation_to_csv
-from V2.config import (
+from arbitrage_calculator import calculate_net_profitability
+from arbitrage_executor import evaluate_and_simulate_arbitrage
+from data_logger import log_operation_to_csv
+from config import (
     MIN_PROFIT_PERCENTAGE, MIN_PROFIT_FOR_ADJUSTMENT_USDT,
     INVESTMENT_ADJUSTMENT_STEP_USDT, MAX_INVESTMENT_ADJUSTMENT_ATTEMPTS,
     MAX_INVESTMENT_PERCENTAGE_OF_BALANCE, OPERATIONS_LOG_CSV_PATH,
@@ -160,7 +160,8 @@ class OpportunityProcessor:
                 ai_input_for_log.update({'determined_investment_usdt_v2': inv_amount, 'net_profitability_results': profit_res, 'investment_adjustment_attempts_made': final_adj_attempt + 1, 'original_calculated_investment_before_adjustment': orig_inv_detail})
 
                 if not profit_res or profit_res.get("error_message"):
-                    ai_input_for_log.setdefault('simulation_results',{})['error_message'] = profit_res.get('error_message', 'Detailed Profitability calc failed')
+                    error_message = profit_res.get('error_message', 'Detailed Profitability calc failed') if profit_res else 'Detailed Profitability calc failed'
+                    ai_input_for_log.setdefault('simulation_results',{})['error_message'] = error_message
                     ai_input_for_log.setdefault('simulation_results',{})['decision_outcome'] = "ERROR_PROFITABILITY_DETAIL_BATCH"
                     await log_operation_to_csv(ai_input_for_log, OPERATIONS_LOG_CSV_PATH); continue
 
@@ -210,8 +211,7 @@ class OpportunityProcessor:
                 ai_input_for_log.setdefault('simulation_results', {})['decision_outcome'] = "ERROR_IN_BATCH_PROCESSING_DETAIL"
                 await log_operation_to_csv(ai_input_for_log, OPERATIONS_LOG_CSV_PATH)
                 continue
-        except Exception as e_batch_outer: print(f"OpportunityProcessor: Error mayor en el procesamiento del lote: {e_batch_outer}")
-        finally:
-            if not acted_in_batch: print("OpportunityProcessor: Ninguna oportunidad procesada resultó en acción en este lote.")
-            self.app.is_processing_opportunity_batch = False
-            print("OpportunityProcessor: Procesamiento de lote finalizado.")
+            finally:
+                if not acted_in_batch: print("OpportunityProcessor: Ninguna oportunidad procesada resultó en acción en este lote.")
+                self.app.is_processing_opportunity_batch = False
+                print("OpportunityProcessor: Procesamiento de lote finalizado.")

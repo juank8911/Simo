@@ -2,9 +2,12 @@
 
 import asyncio
 from datetime import datetime, timezone
+from socketio.async_client import AsyncClient 
 import websockets
 import socketio
+from socketio.exceptions import ConnectionError
 import json
+import os
 # ccxt, aiohttp, urllib.parse, os, numpy, pandas, uuid son importados por los módulos delegados si los necesitan directamente.
 # Si CryptoArbitrageApp necesita alguno directamente, se pueden añadir aquí.
 import urllib.parse # Usado para SEBO_API_BASE_URL
@@ -14,6 +17,7 @@ from V2.sio_event_handlers import SIOEventHandlers
 from V2.ui_command_handlers import UICommandHandlers
 from V2.v2_helpers import V2Helpers
 from V2.opportunity_processor import OpportunityProcessor
+import aiohttp
 from V2.model import ArbitrageIntelligenceModel # Modelo de ML
 
 # --- Importar variables de configuración ---
@@ -33,7 +37,7 @@ SEBO_API_BASE_URL = f"{SEBO_BASE_HTTP_URL}/api"
 class CryptoArbitrageApp:
     def __init__(self):
         # --- Core Attributes ---
-        self.sio = socketio.AsyncClient(logger=False, engineio_logger=False)
+        self.sio = AsyncClient(logger=False, engineio_logger=False)
         self.ui_clients = set()
         self.http_session = None # Será inicializado por _ensure_http_session en V2Helpers
 
@@ -71,9 +75,9 @@ class CryptoArbitrageApp:
         async def disconnect(): print(f"V2 ({os.path.basename(__file__)}): Socket.IO desconectado de Sebo")
 
         # Delegar a los manejadores en SIOEventHandlers
-        self.sio.on('spot-arb', namespace='/api/spot/arb')(self.sio_handlers.on_spot_arb_data_method)
-        self.sio.on('balances-update', namespace='/api/spot/arb')(self.sio_handlers.on_balances_update_from_sebo)
-        self.sio.on('top_20_data', namespace='/api/spot/arb')(self.sio_handlers.on_top_20_data_received)
+        self.sio.on('spot-arb', namespace='/api/spot/arb', handler=self.sio_handlers.on_spot_arb_data_method)
+        self.sio.on('balances-update', namespace='/api/spot/arb', handler=self.sio_handlers.on_balances_update_from_sebo)
+        self.sio.on('top_20_data', namespace='/api/spot/arb', handler=self.sio_handlers.on_top_20_data_received)
 
     async def connect_and_process(self):
         # Utiliza WEBSOCKET_URL de config.py
@@ -83,8 +87,7 @@ class CryptoArbitrageApp:
         try:
             print(f"V2 ({os.path.basename(__file__)}): Conectando a Sebo Socket.IO en {sebo_base_url} con namespace {namespace}")
             await self.sio.connect(sebo_base_url, namespaces=[namespace], transports=['websocket'])
-            await self.sio.wait()
-        except socketio.exceptions.ConnectionError as e: print(f"Error de conexión Socket.IO con Sebo: {e}")
+        except ConnectionError as e: print(f"Error de conexión Socket.IO con Sebo: {e}")
         except Exception as e: print(f"Error general de Socket.IO con Sebo: {e}")
         finally:
             if self.sio and self.sio.connected:
@@ -105,8 +108,8 @@ class CryptoArbitrageApp:
         try: ui_port = int(UI_WEBSOCKET_URL.split(":")[-1].split("/")[0]) # UI_WEBSOCKET_URL de config.py
         except: print(f"Error parseando UI_WEBSOCKET_URL: '{UI_WEBSOCKET_URL}'. Usando 3001."); ui_port = 3001
 
-        async def ui_websocket_handler(websocket_client, path):
-            client_id = id(websocket_client); print(f"Cliente UI conectado (path: {path}), ID: {client_id}")
+        async def ui_websocket_handler(websocket_client):
+            client_id = id(websocket_client); print(f"Cliente UI conectado, ID: {client_id}")
             self.ui_clients.add(websocket_client)
             try:
                 await self.ui_commands.send_model_status(websocket_client) # Delegar a UICommandHandlers

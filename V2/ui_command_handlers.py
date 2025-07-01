@@ -8,11 +8,11 @@ import pandas as pd # Potentially for data handling if reading from CSV for trai
 
 # Assuming these are accessible correctly. If V2 is a package, relative imports like .config are better.
 # For now, direct import might work if PYTHONPATH is set or if these files are in the same root for execution.
-from V2.config import (
+from config import (
     OPERATIONS_LOG_CSV_PATH, SIMULATED_DATA_SAMPLES_TRAIN, SIMULATED_DATA_SAMPLES_TEST,
     REAL_TRADE_MIN_OPERATIONAL_USDT, REAL_TRADE_DEFAULT_INVESTMENT_USDT, DEFAULT_USDT_HOLDER_EXCHANGE_ID
 )
-from V2.arbitrage_executor import execute_real_arbitrage # Placeholder for real trading logic
+from arbitrage_executor import execute_real_arbitrage # Placeholder for real trading logic
 # calculate_net_profitability and evaluate_and_simulate_arbitrage are used by opportunity_processor,
 # but trigger_arbitrage_simulation might call them directly via app.opp_processor or helpers.
 

@@ -11,9 +11,10 @@ API_KEYS = {
 WEBSOCKET_URL = "ws://localhost:3031/api/spot/arb" # WebSocket de sebo (now on 3031)
 UI_WEBSOCKET_URL = "ws://localhost:3001/api/spot/ui" # WebSocket para la UI de V2 (now on 3001)
 TOP_OPPORTUNITY_URL = "http://localhost:3031/api/spot/top-opportunit" # Sebo API endpoint (now on 3031)
-
+OPERATIONS_LOG_CSV_PATH = "logs/v2_operations_log.csv" # Path for CSV logging of operations
 # Parámetros para la lógica de arbitraje
 MIN_PROFIT_PERCENTAGE = 0.6 # Porcentaje mínimo de ganancia para realizar una operación (overall threshold)
+
 
 # Parámetros para el ajuste de inversión iterativo
 MIN_PROFIT_FOR_ADJUSTMENT_USDT = 0.10 # Mínima ganancia en USDT para considerar la inversión inicial aceptable sin ajustar.
@@ -27,8 +28,8 @@ DEFAULT_MODEL_PATH = "trained_arbitrage_model.joblib" # Path for saving/loading 
 OPERATIONS_LOG_CSV_PATH = "logs/v2_operation_logs.csv" # Path for CSV logging of operations
 
 # Simulation and Model Training defaults
-SIMULATED_DATA_SAMPLES_TRAIN = 100 # Default number of samples for simulated training data
-SIMULATED_DATA_SAMPLES_TEST = 50   # Default number of samples for simulated test data
+SIMULATED_DATA_SAMPLES_TRAIN = 300 # Default number of samples for simulated training data
+SIMULATED_DATA_SAMPLES_TEST = 150  # Default number of samples for simulated test data
 
 # Real Trading defaults
 REAL_TRADE_MIN_OPERATIONAL_USDT = 10.0  # Minimum USDT for a real trade operation

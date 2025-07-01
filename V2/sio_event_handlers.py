@@ -7,7 +7,7 @@ class SIOEventHandlers:
         self.app = app_instance # Reference to the main CryptoArbitrageApp instance
 
     async def on_top_20_data_received(self, data):
-        # print(f"SIOEventHandler: Received 'top_20_data': {len(data) if isinstance(data, list) else 'Invalid data type'} items")
+        print(f"SIOEventHandler: Received 'top_20_data': {len(data) if isinstance(data, list) else 'Invalid data type'} items")
         if isinstance(data, list):
             self.app.current_top_20_list = data
             # Broadcast the updated Top 20 list to UI clients

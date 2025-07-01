@@ -13,6 +13,7 @@ const { emitSpotPricesLoop } = require('./controllers/spotSocketController');
 // const { connectDB } = require('./utils/db'); // Comentado o eliminado si no se usa
 const { connectDB } = require('./data/dataBase/connectio'); // Importar connectDB desde connectio.js
 const {addExchanges} = require('./controllers/dbCotroller');
+const analyzerController = require('./controllers/analizerController'); // Importar el controlador de análisis
 
 dotenv.config();
 
@@ -151,6 +152,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *         description: Error al obtener el estado de los exchanges.
  */
 app.get('/api/exchanges-status', getExchangesStatus);
+
+app.get('/analyser', analyzerController.analisisExchangeSimbol);
+app.get('/depure',analyzerController.depuredExchangeSymbolData)
 
 
 /**
@@ -325,6 +329,24 @@ app.get('/api/spot/top-opportunities', getTopSpotOpportunities);
 app.get('/api/exchange-status/:exchangeId', getExchangeStatusById);
 
 
+
+
+/**
+ * crea un cron que ejecute la funcion analizerController.actualizePricetop20 en loop 
+ * cada que acabe de correr vuelva y corra nuevamente
+ *
+ */
+async function loopActualizePricetop20() {
+    try {
+        await analyzerController.actualizePricetop20();
+    } catch (err) {
+        console.error('Error en actualizePricetop20:', err);
+    } finally {
+        setImmediate(loopActualizePricetop20);
+    }
+}
+
+
 /**
  * @swagger
  * /api/spot/top-opportunities:
@@ -362,5 +384,6 @@ serveri.listen(PORT, () => {
     console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
     console.log(`Documentación Swagger disponible en http://localhost:${PORT}/api-docs`);
     console.log('Accede al frontend en http://localhost:3000');
+    loopActualizePricetop20();
     emitSpotPricesLoop(io);
 });

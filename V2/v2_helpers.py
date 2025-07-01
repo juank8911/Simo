@@ -145,7 +145,9 @@ class V2Helpers:
             print(f"V2Helpers: Excepción actualizando balance para {exchange_id}: {e}")
             return False
 
-    async def load_balance_config_for_exchange(self, exchange_id: str) -> dict | None:
+    from typing import Optional
+
+    async def load_balance_config_for_exchange(self, exchange_id: str) -> Optional[dict]:
         if not exchange_id: return None
         from .principal import SEBO_API_BASE_URL
         api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"

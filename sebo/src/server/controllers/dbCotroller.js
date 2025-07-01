@@ -8,6 +8,7 @@ const Exchange = require('../data/dataBase/modelosBD/exchange.model');
 const mongoose = require('mongoose');
 const exchangesConfig = require('../data/exchanges_config.json');
 const ExchangeSymbol = require('../data/dataBase/modelosBD/exchangeSymbol.model');
+const analyzerController = require('./analizerController'); // Importar el controlador de análisis
 const Symbol = require('../data/dataBase/modelosBD/symbol.model');
 const ccxt = require('ccxt');
 
@@ -99,6 +100,127 @@ const addSymbols = async (req, res) => {
  *  */
 
 
+const exchangesymbolsNewAdd = async (req, res) => {
+  console.time("exchangesymbolsNewAdd-TotalTime");
+  let newSymbolsCreated = 0;
+  const failedExchanges = [];
+  const bulkOps = [];
+
+  try {
+    // 1. Obtener todos los exchanges activos de la BD
+    const activeExchanges = await Exchange.find({ isActive: true, connectionType: 'ccxt' }).lean();
+    if (activeExchanges.length === 0) {
+      console.timeEnd("exchangesymbolsNewAdd-TotalTime");
+      return res.status(200).json({ message: "No hay exchanges activos configurados para procesar." });
+    }
+    console.log(`Procesando ${activeExchanges.length} exchanges activos...`);
+
+    // Caché para documentos de Symbol para reducir consultas a la BD
+    const symbolCache = new Map();
+
+    // 2. Iterar sobre cada exchange activo
+    for (const exchangeDoc of activeExchanges) {
+      try {
+        // FIX: Validar que el ID del exchange existe en CCXT antes de intentar instanciarlo.
+        // Esto previene el error "is not a constructor" si el id_ex es incorrecto o no soportado.
+        if (!ccxt.hasOwnProperty(exchangeDoc.id_ex)) {
+          const errorMessage = `El exchange con ID '${exchangeDoc.id_ex}' no es soportado por CCXT o el ID es incorrecto.`;
+          console.warn(errorMessage);
+          failedExchanges.push({ id: exchangeDoc.id_ex, error: errorMessage });
+          continue;
+        }
+        // 3. Inicializar CCXT y obtener todos los tickers de una vez (Optimización)
+        const exchange = new ccxt[exchangeDoc.id_ex]();
+        await exchange.loadMarkets();
+        const tickers = await exchange.fetchTickers();
+
+        // 4. Iterar sobre los mercados (símbolos) del exchange
+        for (const symbolStr in exchange.markets) {
+          const market = exchange.markets[symbolStr];
+
+          // Filtrar solo por mercados spot, activos y contra USDT
+          if (!market.spot || !market.active || market.quote !== 'USDT') {
+            continue;
+          }
+
+          // 5. Encontrar o crear el documento del Símbolo
+          let symbolDoc = symbolCache.get(market.symbol);
+          if (!symbolDoc) {
+            // Buscar en la BD. Si no existe, crearlo.
+            symbolDoc = await Symbol.findOneAndUpdate(
+              { id_sy: market.symbol },
+              { $setOnInsert: { name: market.base } },
+              { new: true, upsert: true, lean: true }
+            );
+            if (!symbolCache.has(market.symbol)) newSymbolsCreated++;
+            symbolCache.set(market.symbol, symbolDoc);
+          }
+
+          // 6. Preparar la operación de actualización para ExchangeSymbol
+          const ticker = tickers[market.symbol];
+          const exchangeData = {
+            exchangeId: exchangeDoc._id,
+            exchangeName: exchangeDoc.name,
+            id_ex: exchangeDoc.id_ex,
+            Val_buy: ticker ? ticker.bid : 0,
+            Val_sell: ticker ? ticker.ask : 0,
+          };
+
+          // Esta operación buscará un ExchangeSymbol por symbolId.
+          // Si no existe, lo creará (upsert: true).
+          // Luego, establecerá o actualizará los datos para el exchange específico en el mapa `exch_data`.
+          bulkOps.push({
+            updateOne: {
+              filter: { symbolId: symbolDoc._id },
+              update: {
+                $set: {
+                  [`exch_data.${exchangeDoc.id_ex}`]: exchangeData,
+                  symbolName: symbolDoc.name,
+                  sy_id: symbolDoc.id_sy, // <-- CAMBIO: Añadir el ID del símbolo
+                  timestamp: new Date()
+                },
+                $setOnInsert: { symbolId: symbolDoc._id }
+              },
+              upsert: true
+            }
+          });
+        }
+      } catch (error) {
+        console.error(`Fallo al procesar el exchange ${exchangeDoc.id_ex}: ${error.message}`);
+        failedExchanges.push({ id: exchangeDoc.id_ex, error: error.message });
+        continue; // Continuar con el siguiente exchange si hay un error
+      }
+    }
+
+    // 7. Ejecutar todas las operaciones en una sola consulta masiva (Optimización)
+    let bulkResult = { modifiedCount: 0, upsertedCount: 0 };
+    if (bulkOps.length > 0) {
+      const result = await ExchangeSymbol.bulkWrite(bulkOps, { ordered: false });
+      bulkResult.modifiedCount = result.modifiedCount || 0;
+      bulkResult.upsertedCount = result.upsertedCount || 0;
+    }
+
+    console.timeEnd("exchangesymbolsNewAdd-TotalTime");
+
+    // 8. Enviar la respuesta final (se eliminó la llamada incorrecta a analyzerController)
+    res.status(200).json({
+      message: `Proceso completado. Se procesaron ${bulkOps.length} pares símbolo-exchange.`,
+      newSymbolsCreated,
+      newExchangeSymbolDocsCreated: bulkResult.upsertedCount,
+      existingExchangeSymbolDocsUpdated: bulkResult.modifiedCount,
+      failedExchanges: failedExchanges
+    });
+
+  } catch (error) {
+    console.timeEnd("exchangesymbolsNewAdd-TotalTime");
+    console.error("Error crítico en exchangesymbolsNewAdd:", error);
+    res.status(500).json({
+      message: "Ocurrió un error crítico durante el proceso.",
+      error: error.message,
+      failedExchanges
+    });
+  }
+};
 
 const addExchangesSymbols = async (req, res) => {
   let addedCount = 0;
@@ -353,5 +475,6 @@ module.exports = {
   addExchanges,
   addSymbols,
   addExchangesSymbols,
-  getAllExchangeSymbols
+  getAllExchangeSymbols,
+  exchangesymbolsNewAdd // Exportar la nueva función
 };
