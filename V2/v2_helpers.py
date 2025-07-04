@@ -53,7 +53,7 @@ class V2Helpers:
         # This requires SEBO_API_BASE_URL to be an attribute of the app instance or a global in principal.py
         # Let's assume principal.py defines it globally for now, or we pass it.
         # For simplicity, re-importing it here if it's not passed via app.
-        from .principal import SEBO_API_BASE_URL # Relative import assuming principal.py sets it globally
+        from main import SEBO_API_BASE_URL # Relative import assuming principal.py sets it globally
 
         api_url = f"{SEBO_API_BASE_URL}/exchanges/{from_exchange_id}/withdrawal-fees/USDT"
         try:
@@ -85,7 +85,7 @@ class V2Helpers:
             self.app.current_balance_config = None
             return False
 
-        from .principal import SEBO_API_BASE_URL
+        from main import SEBO_API_BASE_URL
 
         api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
         try:
@@ -110,7 +110,7 @@ class V2Helpers:
             print("V2Helpers_UpdateBalance: No exchange_id para actualizar balance en Sebo.")
             return False
 
-        from .principal import SEBO_API_BASE_URL
+        from main import SEBO_API_BASE_URL
 
         api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
         payload = {**full_config_to_upsert}
@@ -149,7 +149,7 @@ class V2Helpers:
 
     async def load_balance_config_for_exchange(self, exchange_id: str) -> Optional[dict]:
         if not exchange_id: return None
-        from .principal import SEBO_API_BASE_URL
+        from main import SEBO_API_BASE_URL
         api_url = f"{SEBO_API_BASE_URL}/balances/exchange/{exchange_id}"
         try:
             await self.app._ensure_http_session()
