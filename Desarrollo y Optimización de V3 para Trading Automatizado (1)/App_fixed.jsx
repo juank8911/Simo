@@ -6,8 +6,7 @@ import Layout from './components/Layout/Layout.jsx';
 import ActiveExchangesTable from './components/ActiveExchangesTable/ActiveExchangesTable.jsx';
 import SpotsMenu from './components/SpotsMenu/SpotsMenu.jsx';
 import Top20DetailedPage from './components/Top20DetailedPage/Top20DetailedPage';
-import ExchangeApis from './pages/exchangesApis/ExchangeAPIsPage.jsx'
-import DataViewPage from './pages/DataViewPage/DataViewPage'; // Import DataViewPage
+import ExchangeAPIsPage from './components/ExchangeAPIsPage/ExchangeAPIsPage';
 
 function App() {
   const [allExchanges, setAllExchanges] = useState([]);
@@ -192,7 +191,7 @@ function App() {
         }>
           <Route path="conexion" element={<ActiveExchangesTable selectedExchanges={selectedExchanges} />} />
           <Route path="spots" element={<SpotsMenu />} />
-          <Route path="exchange-apis" element={<ExchangeApis />} />
+          <Route path="exchange-apis" element={<ExchangeAPIsPage />} />
           <Route path="top20-detailed" element={
             <Top20DetailedPage 
               sendV3Command={sendV3Command}
