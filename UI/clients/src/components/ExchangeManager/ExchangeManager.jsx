@@ -12,11 +12,11 @@ const ExchangeManager = () => {
   // Lógica para obtener el estado de conexión de un exchange
   const fetchExchangeStatus = useCallback(async (exchangeId, exchangeName, connectionType, ccxtSupported) => {
     if (connectionType === "ccxt" && !ccxtSupported) {
-      return { 
-        id: exchangeId, 
-        name: exchangeName, 
-        status: 'Error', 
-        error: `Exchange '${exchangeName}' (CCXT type) not supported or misconfigured.` 
+      return {
+        id: exchangeId,
+        name: exchangeName,
+        status: 'Error',
+        error: `Exchange '${exchangeName}' (CCXT type) not supported or misconfigured.`
       };
     }
     try {
@@ -25,11 +25,11 @@ const ExchangeManager = () => {
       if (!response.ok) {
         throw new Error(data.error || `Failed to connect. Status: ${response.status}`);
       }
-      return { 
-        id: exchangeId, 
-        name: exchangeName, 
-        status: data.connected ? 'Online' : 'Offline', 
-        error: data.connected ? null : (data.error || 'Failed to connect.') 
+      return {
+        id: exchangeId,
+        name: exchangeName,
+        status: data.connected ? 'Online' : 'Offline',
+        error: data.connected ? null : (data.error || 'Failed to connect.')
       };
     } catch (err) {
       return { id: exchangeId, name: exchangeName, status: 'Error', error: err.message };
@@ -124,7 +124,7 @@ const ExchangeManager = () => {
       setActiveExchanges(prev => [...prev.filter(ex => ex.id !== exchangeId), placeholder]);
 
       const statusData = await fetchExchangeStatus(exchangeId, exchangeName, connectionType, ccxtSupported);
-      
+
       setActiveExchanges(prev => {
         const list = prev.filter(ex => ex.id !== exchangeId);
         return [...list, { ...statusData, name: exchangeName }];

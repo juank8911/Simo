@@ -22,12 +22,37 @@ exports.createBalance = async (req, res) => {
   }
 };
 
-// Obtener todos los registros de balance
+// Función interna para obtener datos de balances
+const getBalancesData = async () => {
+  try {
+    const balances = await Balance.find().sort({ timestamp: -1 }).lean(); // Usar .lean() para objetos JS planos si no se necesitan métodos de Mongoose
+    return balances;
+  } catch (error) {
+    console.error("Error fetching balance data internally:", error);
+    return []; // Devolver array vacío en caso de error
+  }
+};
+exports.getBalancesData = getBalancesData; // Exportar para uso interno
+
+// Nueva función para obtener solo el último documento de balance
+const getLatestBalanceDocument = async () => {
+  try {
+    const latestBalance = await Balance.findOne().sort({ timestamp: -1 }).lean();
+    return latestBalance; // Puede ser null si la colección está vacía
+  } catch (error) {
+    console.error("Error fetching latest balance document internally:", error);
+    return null; // Devolver null en caso de error
+  }
+};
+exports.getLatestBalanceDocument = getLatestBalanceDocument; // Exportar para uso interno
+
+// Obtener todos los registros de balance (handler de Express)
 exports.getAllBalances = async (req, res) => {
   try {
-    const balances = await Balance.find().sort({ timestamp: -1 });
+    const balances = await getBalancesData(); // Usar la función interna
     res.status(200).json(balances);
   } catch (error) {
+    // getBalancesData ya maneja su propio error de log, aquí solo respondemos
     res.status(500).json({ message: "Error fetching balance records", error: error.message });
   }
 };
