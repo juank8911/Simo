@@ -5,17 +5,22 @@ import logging
 import signal
 import sys
 from typing import Dict, Any
+from flask import Flask
 
 # Importar módulos de V3
-from config_v3 import LOG_LEVEL, LOG_FILE_PATH
-from utils import setup_logging
-from sebo_connector import SeboConnector
-from ui_broadcaster import UIBroadcaster
-from exchange_manager import ExchangeManager
-from data_persistence import DataPersistence
-from trading_logic import TradingLogic
-from ai_model import ArbitrageAIModel
-from simulation_engine import SimulationEngine
+from shared.config_v3 import LOG_LEVEL, LOG_FILE_PATH
+from shared.utils import setup_logging
+from adapters.connectors.sebo_connector import SeboConnector
+from adapters.socket.ui_broadcaster import UIBroadcaster
+from adapters.exchanges.exchange_manager import ExchangeManager
+from adapters.persistence.data_persistence import DataPersistence
+from core.trading_logic import TradingLogic
+from core.ai_model import ArbitrageAIModel
+from core.simulation_engine import SimulationEngine
+from core.advanced_simulation_engine import AdvancedSimulationEngine, SimulationMode
+from adapters.api.api_v3_routes import APIv3Routes
+from adapters.socket.socket_optimizer import SocketOptimizer
+from core.training_handler import TrainingHandler # Importar TrainingHandler
 
 class CryptoArbitrageV3:
     """Aplicación principal de arbitraje de criptomonedas V3."""
@@ -25,6 +30,9 @@ class CryptoArbitrageV3:
         self.logger = setup_logging(LOG_LEVEL, LOG_FILE_PATH)
         self.logger.info("Iniciando Crypto Arbitrage V3")
         
+        # Inicializar Flask app para API v3
+        self.flask_app = Flask(__name__)
+        
         # Inicializar componentes
         self.sebo_connector = SeboConnector()
         self.ui_broadcaster = UIBroadcaster()
@@ -33,6 +41,32 @@ class CryptoArbitrageV3:
         self.ai_model = ArbitrageAIModel()
         self.trading_logic = TradingLogic(self.exchange_manager, self.data_persistence, self.ai_model)
         self.simulation_engine = SimulationEngine(self.ai_model, self.data_persistence)
+        self.advanced_simulation_engine = AdvancedSimulationEngine(
+            self.ai_model,
+            self.data_persistence,
+            self.exchange_manager,
+            self.ui_broadcaster
+        )
+        self.training_handler = TrainingHandler(self.sebo_connector, self.ai_model, self.data_persistence, self.ui_broadcaster) # Inicializar TrainingHandler
+        
+        # Inicializar API v3
+        self.api_v3 = APIv3Routes(
+            self.flask_app,
+            self.sebo_connector,
+            self.ai_model,
+            self.data_persistence,
+            self.ui_broadcaster
+        )
+        
+        # Pasar el training_handler a las rutas API
+        self.api_v3.training_handler = self.training_handler
+        
+        # Inicializar optimizador de socket
+        self.socket_optimizer = SocketOptimizer(
+            self.ui_broadcaster,
+            self.sebo_connector,
+            self.data_persistence
+        )
         
         # Estado de la aplicación
         self.is_running = False
@@ -45,7 +79,6 @@ class CryptoArbitrageV3:
         """Configura los callbacks entre componentes."""
         
         # Callbacks de SeboConnector
-        self.sebo_connector.set_spot_arb_callback(self._on_spot_arb_data)
         self.sebo_connector.set_balances_update_callback(self._on_balances_update)
         self.sebo_connector.set_top20_data_callback(self._on_top20_data)
         
@@ -53,6 +86,12 @@ class CryptoArbitrageV3:
         self.ui_broadcaster.set_trading_start_callback(self._on_trading_start_request)
         self.ui_broadcaster.set_trading_stop_callback(self._on_trading_stop_request)
         self.ui_broadcaster.set_ui_message_callback(self._on_ui_message)
+        self.ui_broadcaster.set_get_ai_model_details_callback(self._on_get_ai_model_details_request)
+        self.ui_broadcaster.set_get_latest_balance_callback(self.data_persistence.load_balance_cache)
+        self.ui_broadcaster.set_train_ai_model_callback(self.training_handler.start_training) # Configurar callback para entrenamiento
+        self.ui_broadcaster.set_test_ai_model_callback(self.training_handler.start_tests) # Configurar callback para pruebas
+        self.ui_broadcaster.set_get_training_status_callback(self.training_handler.get_training_status)  # Callback wrapper para estado de entrenamiento
+        self.ui_broadcaster.set_get_test_status_callback(self.training_handler.get_testing_status) # Callback wrapper para estado de pruebas
         
         # Callbacks de TradingLogic
         self.trading_logic.set_operation_complete_callback(self._on_operation_complete)
@@ -67,9 +106,13 @@ class CryptoArbitrageV3:
             await self.sebo_connector.initialize()
             await self.exchange_manager.initialize()
             await self.trading_logic.initialize()
+            await self.advanced_simulation_engine.initialize()
             
             # Iniciar servidor UI
             await self.ui_broadcaster.start_server()
+            
+            # Iniciar optimizador de socket
+            await self.socket_optimizer.start()
             
             self.logger.info("Todos los componentes inicializados correctamente")
             
@@ -130,11 +173,13 @@ class CryptoArbitrageV3:
         
         try:
             # Detener trading si está activo
-            if self.trading_logic.is_trading_active():
+            if self.trading_logic.is_trading_active:
                 await self.trading_logic.stop_trading()
             
             # Cerrar componentes en orden inverso
             await self.ui_broadcaster.stop_server()
+            await self.socket_optimizer.stop()
+            await self.advanced_simulation_engine.cleanup()
             await self.sebo_connector.disconnect_from_sebo()
             await self.trading_logic.cleanup()
             await self.exchange_manager.cleanup()
@@ -180,7 +225,7 @@ class CryptoArbitrageV3:
                         "sebo_connected": self.sebo_connector.is_connected,
                         "ui_clients": self.ui_broadcaster.get_connected_clients_count(),
                         "active_exchanges": len(active_exchanges),
-                        "trading_active": self.trading_logic.is_trading_active(),
+                        "trading_active": self.trading_logic.is_trading_active,
                         "operation_stats": stats
                     }
                 })
@@ -192,34 +237,6 @@ class CryptoArbitrageV3:
                 await asyncio.sleep(60)  # Esperar más tiempo si hay error
     
     # Callbacks de eventos
-    
-    async def _on_spot_arb_data(self, data: Dict):
-        """Maneja datos de arbitraje spot recibidos de Sebo."""
-        try:
-            # Si el trading está activo, procesar la oportunidad
-            if self.trading_logic.is_trading_active():
-                # Procesar en background para no bloquear
-                asyncio.create_task(self._process_arbitrage_opportunity(data))
-            
-            # Enviar datos a UI para visualización
-            await self.ui_broadcaster.broadcast_message({
-                "type": "spot_arb_data",
-                "payload": data
-            })
-            
-        except Exception as e:
-            self.logger.error(f"Error procesando spot-arb data: {e}")
-    
-    async def _process_arbitrage_opportunity(self, data: Dict):
-        """Procesa una oportunidad de arbitraje en background."""
-        try:
-            result = await self.trading_logic.process_arbitrage_opportunity(data)
-            
-            # Enviar resultado a UI
-            await self.ui_broadcaster.broadcast_operation_result(result)
-            
-        except Exception as e:
-            self.logger.error(f"Error procesando oportunidad de arbitraje: {e}")
     
     async def _on_balances_update(self, data: Dict):
         """Maneja actualizaciones de balance de Sebo."""
@@ -242,13 +259,30 @@ class CryptoArbitrageV3:
         except Exception as e:
             self.logger.error(f"Error procesando top 20 data: {e}")
     
+    async def _on_get_ai_model_details_request(self):
+        """Maneja la solicitud de detalles del modelo de IA desde la UI."""
+        try:
+            self.logger.info("Solicitud de detalles del modelo de IA recibida desde UI")
+            model_info = self.ai_model.get_model_info()
+            
+            await self.ui_broadcaster.broadcast_message({
+                "type": "ai_model_details",
+                "payload": model_info
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Error obteniendo detalles del modelo de IA: {e}")
+            await self.ui_broadcaster.broadcast_log_message(
+                "ERROR", f"Error obteniendo detalles del modelo: {e}"
+            )
+    
     async def _on_trading_start_request(self, payload: Dict):
         """Maneja solicitud de inicio de trading desde UI."""
         try:
             self.logger.info("Solicitud de inicio de trading recibida desde UI")
             
             # Extraer configuración si se proporciona
-            config = payload.get('config', {})
+            config = payload.get("config", {})
             
             await self.trading_logic.start_trading(config)
             
@@ -276,12 +310,22 @@ class CryptoArbitrageV3:
         try:
             self.logger.debug(f"Mensaje UI recibido: {message_type}")
             
-            if message_type == 'get_system_status':
+            if message_type == "get_system_status":
                 await self._send_system_status()
-            elif message_type == 'get_trading_stats':
+            elif message_type == "get_trading_stats":
                 await self._send_trading_stats()
-            elif message_type == 'export_data':
+            elif message_type == "export_data":
                 await self._handle_data_export(payload)
+            elif message_type in ["start_ai_training", "train_ai_model"]: # Manejar ambos tipos de mensaje
+                if self.ui_broadcaster.on_train_ai_model_callback:
+                    await self.ui_broadcaster.on_train_ai_model_callback(payload)
+            elif message_type == "start_ai_test": # Manejar inicio de pruebas
+                if self.ui_broadcaster.on_test_ai_model_callback:
+                    await self.ui_broadcaster.on_test_ai_model_callback(payload)
+            elif message_type == "get_training_status": # Manejar el nuevo tipo de mensaje
+                if self.ui_broadcaster.get_training_status_callback:
+                    status, progress, filepath = self.ui_broadcaster.get_training_status_callback()
+                    await self.ui_broadcaster._send_training_status(self.ui_broadcaster.ui_clients.copy().pop() if self.ui_broadcaster.ui_clients else None) # Enviar a un cliente si existe
             else:
                 self.logger.warning(f"Tipo de mensaje UI no reconocido: {message_type}")
                 
@@ -295,7 +339,7 @@ class CryptoArbitrageV3:
                 "sebo_connected": self.sebo_connector.is_connected,
                 "ui_clients": self.ui_broadcaster.get_connected_clients_count(),
                 "active_exchanges": self.exchange_manager.get_active_exchanges(),
-                "trading_active": self.trading_logic.is_trading_active(),
+                "trading_active": self.trading_logic.is_trading_active,
                 "current_operation": self.trading_logic.get_current_operation()
             }
             
@@ -326,8 +370,8 @@ class CryptoArbitrageV3:
     async def _handle_data_export(self, payload: Dict):
         """Maneja solicitudes de exportación de datos."""
         try:
-            export_type = payload.get('type', 'operations')
-            export_path = payload.get('path', f'export_{export_type}.csv')
+            export_type = payload.get("type", "operations")
+            export_path = payload.get("path", f"export_{export_type}.csv")
             
             success = await self.data_persistence.export_data(export_path, export_type)
             
@@ -349,10 +393,13 @@ class CryptoArbitrageV3:
             # Actualizar estadísticas en UI
             self.ui_broadcaster.update_trading_stats(operation_result)
             
+            # Notificar al optimizador de socket para actualizar balance
+            await self.socket_optimizer.on_operation_completed(operation_result)
+            
             # Log de la operación
-            symbol = operation_result.get('symbol', 'N/A')
-            decision = operation_result.get('decision_outcome', 'N/A')
-            profit = operation_result.get('net_profit_usdt', 0)
+            symbol = operation_result.get("symbol", "N/A")
+            decision = operation_result.get("decision_outcome", "N/A")
+            profit = operation_result.get("net_profit_usdt", 0)
             
             self.logger.info(f"Operación completada: {symbol} | {decision} | Profit: {profit:.4f} USDT")
             
@@ -360,54 +407,29 @@ class CryptoArbitrageV3:
             self.logger.error(f"Error procesando operación completada: {e}")
     
     async def _on_trading_status_change(self, is_active: bool):
-        """Maneja cambios en el estado del trading."""
+        """Maneja cambios en el estado de trading."""
         try:
-            status = "ACTIVO" if is_active else "INACTIVO"
-            self.logger.info(f"Estado de trading cambiado: {status}")
-            
-            # Notificar a UI
             await self.ui_broadcaster.broadcast_trading_status_change(is_active)
-            
         except Exception as e:
-            self.logger.error(f"Error procesando cambio de estado de trading: {e}")
+            self.logger.error(f"Error en _on_trading_status_change: {e}")
 
-async def main():
-    """Función principal."""
-    app = None
-    try:
-        # Crear aplicación
-        app = CryptoArbitrageV3()
-        
-        # Inicializar
-        await app.initialize()
-        
-        # Iniciar
-        started = await app.start()
-        if not started:
-            print("Error: No se pudo iniciar la aplicación")
-            return 1
-        
-        # Ejecutar
-        await app.run()
-        
-        return 0
-        
-    except KeyboardInterrupt:
-        print("\nInterrupción recibida, cerrando aplicación...")
-        return 0
-    except Exception as e:
-        print(f"Error fatal: {e}")
-        return 1
-    finally:
-        if app:
-            await app.shutdown()
 
+# Entry point
 if __name__ == "__main__":
-    # Configurar política de eventos para Windows
-    if sys.platform.startswith('win'):
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    app = CryptoArbitrageV3()
     
-    # Ejecutar aplicación
-    exit_code = asyncio.run(main())
-    sys.exit(exit_code)
+    # Ejecutar la aplicación
+    async def main():
+        await app.initialize()
+        if await app.start():
+            await app.run()
+    
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        app.logger.info("V3 detenido manualmente.")
+    except Exception as e:
+        app.logger.critical(f"Error fatal en V3: {e}", exc_info=True)
+
+
 

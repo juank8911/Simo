@@ -2,15 +2,18 @@ const express = require('express');
 const router = express.Router();
 
 const { getLastSpotArb } = require('../controllers/spotSocketController');
-const {handleSpotAnalysisRequest, handleSpotExchangePrice}= require('../controllers/spotController'); // handleSpotExchangePrice sigue siendo problemático si no se ha corregido spotController.js
-const { addExchangesSymbols, exchangesymbolsNewAdd } = require('../controllers/dbCotroller');
+const { handleSpotAnalysisRequest } = require('../controllers/spotController');
+const { addExchangesSymbols, exchangesymbolsNewAdd,deleteLowCountExchangeSymbols } = require('../controllers/dbCotroller');
+const analizerController = require('../controllers/analizerController');
+const symbolController = require('../controllers/symbolController');
+const tradingController = require('../controllers/TradingController');
 // const {analyzeSymbols} = require('../controllers/analizerController'); // Comentada para usar el objeto completo
-const analizerController = require('../controllers/analizerController');     // Usar el objeto completo
-const symbolController = require('../controllers/symbolController'); // Importar controlador de símbolos
+
 
 // ...otras rutas...
 
 router.get('/symbol', symbolController.addSymbolsForExchange);
+
 /**
  * @swagger
  * /api/spot/arb:
@@ -98,6 +101,7 @@ router.get('/analysis', handleSpotAnalysisRequest);
  *       500:
  *         description: Error crítico durante el análisis de spot.
  */
+    // router.get('/exchange-price', handleSpotExchangePrice);
 // console.log("Debug: typeof handleSpotExchangePrice === 'function':", typeof handleSpotExchangePrice === 'function');
 // router.get('/exchange-price', handleSpotExchangePrice); // Comentando ruta ya que handleSpotExchangePrice no existe en spotController.js
 
@@ -123,10 +127,51 @@ router.get('/analysis', handleSpotAnalysisRequest);
  */
 router.get('/exchange-symbols', addExchangesSymbols);
 
+/**
+ * @swagger
+ * /api/spot/exchangesymbol:
+ *   get:
+ *     summary: Agrega los símbolos de los exchanges activos a la base de datos.
+ *     tags:
+ *       - Spot
+ *     responses:
+ *       200:
+ *         description: Símbolos de exchanges agregados correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al agregar símbolos de exchanges.
+ */
 router.get('/exchangesymbol', exchangesymbolsNewAdd);
 
-router.get('/depure', analizerController.depuredExchangeSymbolData);
+/**
+ * @swagger
+ * /api/spot/depure:
+ *   get:
+ *     summary: Depura los datos de símbolos de exchanges.
+ *     tags:
+ *       - Spot
+ *     responses:
+ *       200:
+ *         description: Datos de símbolos de exchanges depurados correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al depurar datos de símbolos de exchanges.
+ */
+// router.get('/depure', analizerController.depuredExchangeSymbolData);
 
+router.get('/depureex,',deleteLowCountExchangeSymbols)
 
 /**
  * @swagger
@@ -148,7 +193,53 @@ router.get('/depure', analizerController.depuredExchangeSymbolData);
  *       500:
  *         description: Error durante el análisis de promedios.
  */
-router.get('/promedios', analizerController.analyzeSymbols); // Usando acceso directo a la propiedad
+router.get('/promedios', analizerController.addAnalyzeSymbolsAsync); // Usando acceso directo a la propiedad
+
+/**
+ * @swagger
+ * /api/spot/update-fees:
+ *   get:
+ *     summary: Inicia la actualización en segundo plano de las comisiones de retiro y depósito para todos los análisis.
+ *     tags:
+ *       - Spot
+ *       - Maintenance
+ *     responses:
+ *       202:
+ *         description: El proceso de actualización ha comenzado en segundo plano.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: El proceso para actualizar la información de retiro/depósito ha comenzado en segundo plano.
+ *       500:
+ *         description: Error al iniciar el proceso.
+ */
+router.get('/update-fees', analizerController.updateAnalysisFee);
+
+/**
+ * @swagger
+ * /api/spot/training-files:
+ *   get:
+ *     summary: Obtiene la lista de archivos CSV de entrenamiento disponibles.
+ *     tags:
+ *       - Training
+ *     responses:
+ *       200:
+ *         description: Una lista de nombres de archivos CSV.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ *                 example: "realData_2025-08-08_1h.csv"
+ *       500:
+ *         description: Error interno del servidor.
+ */
+router.get('/training-files', tradingController.getTrainingCSVFiles);
 
 /**
  * @swagger
@@ -164,7 +255,7 @@ router.get('/promedios', analizerController.analyzeSymbols); // Usando acceso di
  */
 
 
-
+router.post('/nets',analizerController.updateAnalysisWithdrawDepositFee);
 
 
 module.exports = router;

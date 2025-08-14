@@ -14,7 +14,7 @@ class UIBroadcaster:
     """Maneja la comunicación WebSocket con la interfaz de usuario."""
     
     def __init__(self):
-        self.logger = logging.getLogger('V3.UIBroadcaster')
+        self.logger = logging.getLogger("V3.UIBroadcaster")
         self.ui_clients: Set[websockets.WebSocketServerProtocol] = set()
         self.server = None
         self.is_running = False
@@ -23,16 +23,27 @@ class UIBroadcaster:
         self.on_trading_start_callback: Optional[Callable] = None
         self.on_trading_stop_callback: Optional[Callable] = None
         self.on_ui_message_callback: Optional[Callable] = None
+        self.on_get_ai_model_details_callback: Optional[Callable] = None
+        self.on_train_ai_model_callback: Optional[Callable] = None
+        self.get_latest_balance_callback: Optional[Callable] = None
+        self.get_ai_model_details_callback: Optional[Callable] = None
+        self.get_training_status_callback: Optional[Callable] = None # Nuevo callback
         
         # Estado del trading
         self.trading_active = False
         self.trading_stats = {
-            'operations_count': 0,
-            'successful_operations': 0,
-            'total_profit_usdt': 0.0,
-            'start_time': None,
-            'last_operation_time': None
+            "operations_count": 0,
+            "successful_operations": 0,
+            "total_profit_usdt": 0.0,
+            "start_time": None,
+            "last_operation_time": None
         }
+
+        # Estado del entrenamiento (para persistencia)
+        self.training_status = "idle"
+        self.training_progress = 0
+        self.training_filepath = None
+    
     
     async def start_server(self):
         """Inicia el servidor WebSocket para la UI."""
@@ -73,8 +84,11 @@ class UIBroadcaster:
         self.ui_clients.add(websocket)
         
         try:
-            # Enviar estado inicial al cliente
+            # Enviar estado inicial y datos adicionales al cliente
             await self._send_initial_state(websocket)
+            await self.send_ai_model_details(websocket)
+            await self.send_latest_balance(websocket)
+            await self._send_training_status(websocket) # Enviar estado de entrenamiento al conectar
             
             # Escuchar mensajes del cliente
             async for message in websocket:
@@ -107,18 +121,26 @@ class UIBroadcaster:
         """Procesa mensajes recibidos de la UI."""
         try:
             data = json.loads(message)
-            message_type = data.get('type')
-            payload = data.get('payload', {})
+            message_type = data.get("type")
+            payload = data.get("payload", {})
             
             self.logger.debug(f"Mensaje UI recibido: {message_type}")
             
-            if message_type == 'start_trading':
+            if message_type == "start_trading":
                 await self._handle_start_trading(payload)
-            elif message_type == 'stop_trading':
+            elif message_type == "stop_trading":
                 await self._handle_stop_trading(payload)
-            elif message_type == 'get_trading_status':
+            elif message_type == "get_trading_status":
                 await self._send_trading_status(websocket)
-            elif message_type == 'ping':
+            elif message_type == "get_ai_model_details":
+                if self.on_get_ai_model_details_callback:
+                    await self.on_get_ai_model_details_callback()
+            elif message_type == "start_ai_training": # Manejar el nuevo mensaje de la UI
+                if self.on_train_ai_model_callback:
+                    await self.on_train_ai_model_callback(payload)
+            elif message_type == "get_training_status": # Nuevo: solicitar estado de entrenamiento
+                await self._send_training_status(websocket)
+            elif message_type == "ping":
                 await self._send_pong(websocket)
             else:
                 # Callback genérico para otros mensajes
@@ -134,7 +156,7 @@ class UIBroadcaster:
         """Maneja la solicitud de inicio de trading."""
         if not self.trading_active:
             self.trading_active = True
-            self.trading_stats['start_time'] = get_current_timestamp()
+            self.trading_stats["start_time"] = get_current_timestamp()
             
             self.logger.info("Trading iniciado desde UI")
             
@@ -270,6 +292,50 @@ class UIBroadcaster:
         }
         
         await self.broadcast_message(log_message)
+
+    async def send_ai_model_details(self, websocket):
+        """Envía los detalles del modelo de IA a un cliente específico."""
+        if self.get_ai_model_details_callback:
+            try:
+                model_info = self.get_ai_model_details_callback()
+                message = {
+                    "type": "ai_model_details",
+                    "payload": model_info
+                }
+                await websocket.send(json.dumps(message))
+            except Exception as e:
+                self.logger.error(f"Error enviando detalles del modelo de IA: {e}")
+
+    async def send_latest_balance(self, websocket):
+        """Envía el último balance cacheado a un cliente específico."""
+        if self.get_latest_balance_callback:
+            try:
+                balance_data = self.get_latest_balance_callback()
+                if balance_data:
+                    message = {
+                        "type": "balance_update",
+                        "payload": balance_data
+                    }
+                    await websocket.send(json.dumps(message))
+            except Exception as e:
+                self.logger.error(f"Error enviando el último balance: {e}")
+
+    async def _send_training_status(self, websocket):
+        """Envía el estado actual del entrenamiento a un cliente específico."""
+        if self.get_training_status_callback:
+            try:
+                status, progress, filepath = self.get_training_status_callback()
+                message = {
+                    "type": "training_status",
+                    "payload": {
+                        "status": status,
+                        "progress": progress,
+                        "filepath": filepath
+                    }
+                }
+                await websocket.send(json.dumps(message))
+            except Exception as e:
+                self.logger.error(f"Error enviando estado de entrenamiento: {e}")
     
     # Callback setters
     
@@ -285,17 +351,34 @@ class UIBroadcaster:
         """Establece el callback para mensajes genéricos de la UI."""
         self.on_ui_message_callback = callback
     
+    def set_get_ai_model_details_callback(self, callback: Callable):
+        """Establece el callback para solicitar detalles del modelo de IA."""
+        self.on_get_ai_model_details_callback = callback
+        self.get_ai_model_details_callback = callback
+
+    def set_train_ai_model_callback(self, callback: Callable):
+        """Establece el callback para la solicitud de entrenamiento del modelo de IA."""
+        self.on_train_ai_model_callback = callback
+
+    def set_get_latest_balance_callback(self, callback: Callable):
+        """Establece el callback para obtener el último balance cacheado."""
+        self.get_latest_balance_callback = callback
+
+    def set_get_training_status_callback(self, callback: Callable):
+        """Establece el callback para obtener el estado actual del entrenamiento."""
+        self.get_training_status_callback = callback
+
     # Métodos para actualizar estadísticas
     
     def update_trading_stats(self, operation_result: Dict):
         """Actualiza las estadísticas de trading."""
-        self.trading_stats['operations_count'] += 1
-        self.trading_stats['last_operation_time'] = get_current_timestamp()
+        self.trading_stats["operations_count"] += 1
+        self.trading_stats["last_operation_time"] = get_current_timestamp()
         
-        if operation_result.get('success', False):
-            self.trading_stats['successful_operations'] += 1
-            profit = operation_result.get('net_profit_usdt', 0.0)
-            self.trading_stats['total_profit_usdt'] += profit
+        if operation_result.get("success", False):
+            self.trading_stats["successful_operations"] += 1
+            profit = operation_result.get("net_profit_usdt", 0.0)
+            self.trading_stats["total_profit_usdt"] += profit
     
     def get_connected_clients_count(self) -> int:
         """Retorna el número de clientes UI conectados."""
@@ -304,4 +387,47 @@ class UIBroadcaster:
     def is_trading_active(self) -> bool:
         """Retorna si el trading está activo."""
         return self.trading_active
+
+    def update_training_status(self, status: str, progress: int, filepath: Optional[str] = None):
+        """Actualiza el estado de entrenamiento y lo almacena."""
+        self.training_status = status
+        self.training_progress = progress
+        self.training_filepath = filepath
+
+    async def broadcast_training_progress(self, progress: int, completed: bool, filepath: Optional[str] = None):
+        """Envía el progreso de entrenamiento a todos los clientes UI."""
+        self.update_training_status("training" if not completed else "completed", progress, filepath)
+        message = {
+            "type": "training_progress",
+            "payload": {
+                "progress": progress,
+                "completed": completed,
+                "filepath": filepath
+            }
+        }
+        await self.broadcast_message(message)
+
+    async def broadcast_training_complete(self, results: Dict):
+        """Envía el mensaje de entrenamiento completado a todos los clientes UI."""
+        self.update_training_status("completed", 100, self.training_filepath)
+        message = {
+            "type": "training_complete",
+            "payload": results
+        }
+        await self.broadcast_message(message)
+
+    async def broadcast_training_error(self, error_message: str):
+        """Envía un mensaje de error de entrenamiento a todos los clientes UI."""
+        self.update_training_status("error", 0, self.training_filepath)
+        message = {
+            "type": "training_error",
+            "payload": {"message": error_message}
+        }
+        await self.broadcast_message(message)
+
+    def get_training_status(self) -> (str, int, Optional[str]):
+        """Retorna el estado actual del entrenamiento."""
+        return self.training_status, self.training_progress, self.training_filepath
+
+
 
